@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/catalog/v1;catalogv1";
+
+service CatalogService {}

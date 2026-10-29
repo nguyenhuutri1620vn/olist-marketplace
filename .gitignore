@@ -1,0 +1,20 @@
+# Olist CSV (Kaggle) — không commit
+data/*
+!data/.gitkeep
+
+# Build output
+bin/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Go workspace sum
+go.work.sum
+
+# Env / IDE
+.env
+.env.*
+.idea/
+.vscode/
+.DS_Store

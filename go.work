@@ -1,0 +1,13 @@
+go 1.23.2
+
+use (
+	./pkg
+	./services/analytics-service
+	./services/api-gateway
+	./services/catalog-service
+	./services/customer-service
+	./services/order-service
+	./services/payment-service
+	./services/review-service
+	./tools/olist-importer
+)

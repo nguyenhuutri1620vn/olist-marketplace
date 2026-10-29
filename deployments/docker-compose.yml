@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: olist
+      POSTGRES_PASSWORD: olist
+    ports:
+      - "5432:5432"
+
+  api-gateway:
+    build: ../services/api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres

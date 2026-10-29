@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway: ['services/api-gateway/**', 'pkg/**']
+            catalog-service: ['services/catalog-service/**', 'pkg/**', 'proto/**']
+            customer-service: ['services/customer-service/**', 'pkg/**']
+            order-service: ['services/order-service/**', 'pkg/**', 'proto/**']
+            payment-service: ['services/payment-service/**', 'pkg/**']
+            review-service: ['services/review-service/**', 'pkg/**']
+            analytics-service: ['services/analytics-service/**', 'pkg/**']
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.services != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - run: go build ./... && go test ./...
+        working-directory: services/${{ matrix.service }}
