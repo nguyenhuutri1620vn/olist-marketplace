@@ -7,3 +7,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-2-observability-baseline-in-every-service.md`
   summary: Tie each service's grpc.health.v1 status to its readiness checks and set NOT_SERVING before GracefulStop.
   evidence: grpcx.NewServer registers a health server that always reports SERVING, so the gateway debug route shows SERVING while /readyz fails on the DB, and clients get no drain signal on shutdown; matters once the gateway routes real traffic (Story 1.6).
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-import-catalog-reference-data.md`
+  summary: Protect catalog's CatalogAdminService (auth interceptor requiring an Admin JWT, or a separate internal listener) once JWT verification exists.
+  evidence: The admin RPCs are registered on the same gRPC server as future public RPCs with no access control; only the unpublished port limits callers today (Story 1.6).
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-3-import-catalog-reference-data.md`
+  summary: Tie the Makefile OLIST_FILES list to the files olist.Load reads (e.g. a test inside tools/olist-importer that parses the Makefile).
+  evidence: tests/scaffold pins OLIST_FILES to its own literal list, so adding a CSV to olist.Load would pass CI and fail make import at runtime.

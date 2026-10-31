@@ -182,6 +182,20 @@ services:
       DATABASE_URL: postgres://analytics:${ANALYTICS_DB_PASSWORD:-analytics}@postgres:5432/analytics?sslmode=disable
       KAFKA_BROKERS: kafka:9092
 
+  # On demand only (`make import`), never on `make up`: loads reference data
+  # through catalog's admin gRPC (AD-12). `make import` copies the CSVs in.
+  olist-importer:
+    profiles: ["tools"]
+    build:
+      context: ..
+      dockerfile: tools/olist-importer/Dockerfile
+    command: ["import"]
+    environment:
+      <<: *env
+    depends_on:
+      catalog-service:
+        condition: service_healthy
+
 networks:
   default:
     name: olist

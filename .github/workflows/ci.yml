@@ -94,6 +94,11 @@ jobs:
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
         run: go test ./dbmigrate/... ./bootstrap/... ./app/...
+      - name: catalog repository tests against Postgres
+        working-directory: services/catalog-service
+        env:
+          DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
+        run: go test ./internal/repository/...
 
   smoke:
     runs-on: ubuntu-latest
@@ -114,6 +119,8 @@ jobs:
           exit 1
       - name: Gateway reaches a service over traced gRPC
         run: curl -fsS 127.0.0.1:8080/debug/grpc-health/catalog-service
+      - name: Importer image builds (tools profile is not built by make up)
+        run: docker compose -f deployments/docker-compose.yml --profile tools build olist-importer
       - name: Logs on failure
         if: failure()
         run: docker compose -f deployments/docker-compose.yml logs --tail 100

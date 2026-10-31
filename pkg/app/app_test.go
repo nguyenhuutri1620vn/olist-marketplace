@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -11,7 +12,10 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
@@ -92,7 +96,16 @@ func TestDataServiceMigratesServesGRPCAndBecomesReady(t *testing.T) {
 	t.Setenv("OPS_ADDR", freeAddr(t))
 	grpcAddr := freeAddr(t)
 	t.Setenv("GRPC_ADDR", grpcAddr)
-	stop := run(t, app.Service{Name: "catalog-service", Migrations: fstest.MapFS{}, GRPC: true})
+	poolErr := make(chan error, 1)
+	stop := run(t, app.Service{Name: "catalog-service", Migrations: fstest.MapFS{}, GRPC: true,
+		RegisterGRPC: func(s *grpc.Server, pool *pgxpool.Pool) {
+			s.RegisterService(&pingDesc, struct{}{})
+			if pool == nil {
+				poolErr <- errors.New("RegisterGRPC got a nil pool")
+				return
+			}
+			poolErr <- pool.Ping(context.Background())
+		}})
 
 	waitReady(t)
 	conn, err := grpcx.Dial(grpcAddr)
@@ -104,9 +117,29 @@ func TestDataServiceMigratesServesGRPCAndBecomesReady(t *testing.T) {
 	if err != nil || resp.GetStatus() != healthpb.HealthCheckResponse_SERVING {
 		t.Errorf("gRPC health = %v, %v; want SERVING", resp.GetStatus(), err)
 	}
+	if err := <-poolErr; err != nil {
+		t.Errorf("RegisterGRPC pool: %v", err)
+	}
+	// The hooked service answers on GRPC_ADDR, so it is on the served server.
+	if err := conn.Invoke(context.Background(), "/test.Ping/Ping", &emptypb.Empty{}, &emptypb.Empty{}); err != nil {
+		t.Errorf("RPC to the service registered by RegisterGRPC: %v", err)
+	}
 	if err := stop(); err != nil {
 		t.Errorf("Run returned %v after cancel, want nil", err)
 	}
+}
+
+// pingDesc is a one-method service that RegisterGRPC can register in tests.
+var pingDesc = grpc.ServiceDesc{
+	ServiceName: "test.Ping",
+	HandlerType: (*any)(nil),
+	Methods: []grpc.MethodDesc{{
+		MethodName: "Ping",
+		Handler: func(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+			in := &emptypb.Empty{}
+			return in, dec(in)
+		},
+	}},
 }
 
 func TestRunFailsWhenMigrationsCannotReachDatabase(t *testing.T) {

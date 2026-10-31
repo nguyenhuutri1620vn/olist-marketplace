@@ -7,8 +7,10 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/catalog-service/migrations"
 )
 
-func TestFSIsReadableWithoutSQLFiles(t *testing.T) {
-	if _, err := fs.ReadDir(migrations.FS, "."); err != nil {
-		t.Fatalf("read embedded migrations: %v", err)
+func TestFSEmbedsTheCatalogMigration(t *testing.T) {
+	for _, name := range []string{"000001_catalog.up.sql", "000001_catalog.down.sql"} {
+		if _, err := fs.Stat(migrations.FS, name); err != nil {
+			t.Errorf("embedded %s: %v", name, err)
+		}
 	}
 }

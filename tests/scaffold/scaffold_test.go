@@ -35,6 +35,9 @@ var publishedPorts = []string{"api-gateway", "jaeger", "prometheus", "grafana", 
 
 var infra = []string{"postgres", "kafka", "jaeger", "prometheus", "grafana", "kafka-ui"}
 
+// tools run on demand (`make import`) under the "tools" profile, never on `make up`.
+var tools = []string{"olist-importer"}
+
 const root = "../.."
 
 func read(t *testing.T, rel string) string {
@@ -118,6 +121,7 @@ func TestCIFiltersListExactlyTheServices(t *testing.T) {
 type composeFile struct {
 	Services map[string]struct {
 		Ports       []any             `yaml:"ports"`
+		Profiles    []string          `yaml:"profiles"`
 		Networks    []string          `yaml:"networks"`
 		Environment map[string]string `yaml:"environment"`
 		Healthcheck struct {
@@ -142,7 +146,7 @@ func TestComposeRunsServicesAndInfraOnOneNetwork(t *testing.T) {
 	for name := range c.Services {
 		got = append(got, name)
 	}
-	assertSet(t, "compose services", got, append(slices.Clone(services), infra...))
+	assertSet(t, "compose services", got, slices.Concat(services, infra, tools))
 	if len(c.Networks) != 1 {
 		t.Errorf("compose networks = %d, want exactly 1", len(c.Networks))
 	}
@@ -293,4 +297,31 @@ func TestEveryServiceExportsTracesToJaeger(t *testing.T) {
 			t.Errorf("%s OTEL_EXPORTER_OTLP_ENDPOINT = %q, want http://jaeger:4318", s, got)
 		}
 	}
+}
+
+func TestToolsRunOnlyOnDemand(t *testing.T) {
+	c := loadCompose(t)
+	for name, s := range c.Services {
+		isTool := slices.Contains(tools, name)
+		if hasProfile := slices.Contains(s.Profiles, "tools"); hasProfile != isTool {
+			t.Errorf("%s profiles = %v; want the tools profile only on %v", name, s.Profiles, tools)
+		}
+	}
+	for _, name := range tools {
+		if c.Services[name].Environment["OTEL_EXPORTER_OTLP_ENDPOINT"] != "http://jaeger:4318" {
+			t.Errorf("%s does not export traces to Jaeger", name)
+		}
+	}
+}
+
+func TestMakeImportCopiesEveryDatasetFile(t *testing.T) {
+	m := regexp.MustCompile(`(?m)^OLIST_FILES\s*:?=\s*(.+)$`).FindStringSubmatch(read(t, "Makefile"))
+	if m == nil {
+		t.Fatal("Makefile has no OLIST_FILES variable")
+	}
+	want := []string{
+		"product_category_name_translation.csv", "olist_sellers_dataset.csv", "olist_products_dataset.csv",
+		"olist_orders_dataset.csv", "olist_order_items_dataset.csv",
+	}
+	assertSet(t, "Makefile OLIST_FILES", strings.Fields(m[1]), want)
 }

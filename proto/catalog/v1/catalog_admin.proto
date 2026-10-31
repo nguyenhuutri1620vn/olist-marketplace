@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package catalog.v1;
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1";
+
+// CatalogAdminService loads Olist reference data (AD-12). Every RPC is an
+// idempotent upsert keyed by dataset id; a batch is applied whole or not at all.
+service CatalogAdminService {
+  rpc ImportCategories(ImportCategoriesRequest) returns (ImportCategoriesResponse);
+  rpc ImportSellers(ImportSellersRequest) returns (ImportSellersResponse);
+  rpc ImportProducts(ImportProductsRequest) returns (ImportProductsResponse);
+}
+
+message ImportCategoriesRequest {
+  repeated ImportCategory categories = 1;
+}
+
+// ImportCategory is keyed by its Portuguese dataset name. An empty name_en
+// falls back to name_pt.
+message ImportCategory {
+  string name_pt = 1;
+  string name_en = 2;
+}
+
+message ImportCategoriesResponse {
+  int32 upserted = 1;
+}
+
+message ImportSellersRequest {
+  repeated ImportSeller sellers = 1;
+}
+
+message ImportSeller {
+  // 32 hex digits, as in the dataset.
+  string seller_id = 1;
+  string city = 2;
+  // Two-letter Brazilian state code.
+  string state = 3;
+}
+
+message ImportSellersResponse {
+  int32 upserted = 1;
+}
+
+message ImportProductsRequest {
+  repeated ImportProduct products = 1;
+}
+
+// ImportProduct carries the price, freight and Seller of the Product's most
+// recent dataset Order Item. catalog derives the display name.
+message ImportProduct {
+  string product_id = 1;
+  // Portuguese Category name; empty means Uncategorized.
+  string category_name_pt = 2;
+  string seller_id = 3;
+  int64 price_centavos = 4;
+  int64 freight_centavos = 5;
+}
+
+message ImportProductsResponse {
+  int32 upserted = 1;
+}

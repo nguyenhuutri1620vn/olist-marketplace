@@ -25,10 +25,13 @@ make build                # build mọi service vào ./bin
 make test                 # test mọi service và module dùng chung
 make proto                # buf generate + lint + breaking (so với develop)
 make up                   # docker compose: 7 service + Postgres, Kafka, Jaeger, Prometheus, Grafana, kafka-ui
+make import               # nạp Category, Seller, Product từ data/*.csv vào catalog (chạy lại không tạo trùng)
 make check-db-isolation   # kiểm tra mỗi DB user chỉ vào được DB của mình
 make down
 ```
 
 Port mở ra host (chỉ trên `127.0.0.1`): api-gateway `8080`, Jaeger `16686`, Prometheus `9090`, Grafana `3000`, kafka-ui `8081`.
+
+`make import` cần dataset Olist (Kaggle) trong `data/`. Importer chạy trong container trên mạng compose và chỉ gọi admin gRPC của catalog-service. Biến môi trường của importer: `DATA_DIR` (mặc định `/data`), `CATALOG_ADDR` (mặc định `catalog-service:9090`). Test `TestLoadRealDataset` chỉ chạy khi đặt `OLIST_DATA_DIR` trỏ tới thư mục CSV.
 
 Init script Postgres chỉ chạy khi volume dữ liệu được tạo lần đầu. Đổi mật khẩu DB (`*_DB_PASSWORD`) hoặc thêm database thì phải xoá volume: `docker compose -f deployments/docker-compose.yml down -v`.

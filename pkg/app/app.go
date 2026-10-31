@@ -17,7 +17,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"google.golang.org/grpc"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/bootstrap"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
@@ -36,6 +38,9 @@ type Service struct {
 	UsesKafka bool
 	// GRPC serves a gRPC server with health on GRPC_ADDR (default :9090).
 	GRPC bool
+	// RegisterGRPC, when set with GRPC, registers the service's handlers. pool
+	// is the database pool, nil without Migrations.
+	RegisterGRPC func(s *grpc.Server, pool *pgxpool.Pool)
 	// API, when set, builds the HTTP API served on HTTP_ADDR (default :8080)
 	// and a function that releases its resources at shutdown.
 	API func() (http.Handler, func(), error)
@@ -96,12 +101,13 @@ func Run(ctx context.Context, s Service) error {
 	}()
 
 	var checks []ops.Check
+	var pool *pgxpool.Pool
 	if s.Migrations != nil {
 		if err := bootstrap.Migrate(ctx, s.Migrations); err != nil {
 			return err
 		}
 		log.InfoContext(ctx, "migrations applied")
-		pool, err := bootstrap.OpenDB(ctx)
+		pool, err = bootstrap.OpenDB(ctx)
 		if err != nil {
 			return err
 		}
@@ -121,7 +127,11 @@ func Run(ctx context.Context, s Service) error {
 	var servers []server
 	servers = append(servers, httpServer("ops", addr("OPS_ADDR", ":8090"), ops.Handler(reg, checks...)))
 	if s.GRPC {
-		servers = append(servers, grpcServer{grpcx.NewServer(reg), addr("GRPC_ADDR", ":9090")})
+		gs := grpcx.NewServer(reg)
+		if s.RegisterGRPC != nil {
+			s.RegisterGRPC(gs, pool)
+		}
+		servers = append(servers, grpcServer{gs, addr("GRPC_ADDR", ":9090")})
 	}
 	if s.API != nil {
 		h, closeAPI, err := s.API()
