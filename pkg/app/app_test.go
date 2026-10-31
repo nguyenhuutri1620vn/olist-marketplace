@@ -162,3 +162,52 @@ func TestHealthcheckFailsWhenNothingListens(t *testing.T) {
 		t.Error("Healthcheck with no server = nil, want error")
 	}
 }
+
+func TestInitRunsBeforeHandlersAreBuilt(t *testing.T) {
+	t.Setenv("OPS_ADDR", freeAddr(t))
+	t.Setenv("GRPC_ADDR", freeAddr(t))
+	t.Setenv("HTTP_ADDR", freeAddr(t))
+	order := make(chan string, 3)
+	stop := run(t, app.Service{
+		Name: "identity-service",
+		GRPC: true,
+		Init: func(ctx context.Context, _ *pgxpool.Pool) error {
+			order <- "init"
+			return nil
+		},
+		RegisterGRPC: func(*grpc.Server, *pgxpool.Pool) { order <- "grpc" },
+		API: func() (http.Handler, func(), error) {
+			order <- "api"
+			return http.NewServeMux(), func() {}, nil
+		},
+	})
+	waitReady(t)
+	var got []string
+	for range 3 {
+		select {
+		case step := <-order:
+			got = append(got, step)
+		case <-time.After(5 * time.Second):
+			t.Fatalf("hooks called: %v, want init, grpc and api", got)
+		}
+	}
+	if got[0] != "init" {
+		t.Errorf("call order = %v, want init first", got)
+	}
+	if err := stop(); err != nil {
+		t.Errorf("Run returned %v after cancel, want nil", err)
+	}
+}
+
+func TestRunFailsWhenInitFails(t *testing.T) {
+	t.Setenv("OPS_ADDR", freeAddr(t))
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:1")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := app.Run(ctx, app.Service{Name: "identity-service", Init: func(context.Context, *pgxpool.Pool) error {
+		return errors.New("no signing key")
+	}})
+	if err == nil || !strings.Contains(err.Error(), "no signing key") {
+		t.Errorf("Run = %v, want the Init error", err)
+	}
+}

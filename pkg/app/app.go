@@ -38,6 +38,9 @@ type Service struct {
 	UsesKafka bool
 	// GRPC serves a gRPC server with health on GRPC_ADDR (default :9090).
 	GRPC bool
+	// Init, when set, runs once before RegisterGRPC and API, so both can share
+	// what it builds. pool is nil without Migrations. An error stops startup.
+	Init func(ctx context.Context, pool *pgxpool.Pool) error
 	// RegisterGRPC, when set with GRPC, registers the service's handlers. pool
 	// is the database pool, nil without Migrations.
 	RegisterGRPC func(s *grpc.Server, pool *pgxpool.Pool)
@@ -121,6 +124,12 @@ func Run(ctx context.Context, s Service) error {
 		}
 		defer closeKafka()
 		checks = append(checks, check)
+	}
+
+	if s.Init != nil {
+		if err := s.Init(ctx, pool); err != nil {
+			return fmt.Errorf("init: %w", err)
+		}
 	}
 
 	reg := ops.NewRegistry()

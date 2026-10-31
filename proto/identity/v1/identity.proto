@@ -4,5 +4,48 @@ package identity.v1;
 
 option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1;identityv1";
 
-// IdentityService is the gRPC contract of identity-service. RPCs arrive with later stories.
-service IdentityService {}
+// IdentityService registers Customers and logs Accounts in (FR14, AD-14).
+service IdentityService {
+  // Register creates a Customer Account and logs it in. Registration never
+  // creates a Seller or Admin.
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  // Login exchanges an email and password for a token. A wrong password and
+  // an unknown email return the same UNAUTHENTICATED error.
+  rpc Login(LoginRequest) returns (LoginResponse);
+}
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_CUSTOMER = 1;
+  ROLE_SELLER = 2;
+  ROLE_ADMIN = 3;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2;
+  // Unspecified or ROLE_CUSTOMER; any other role is INVALID_ARGUMENT.
+  Role role = 3;
+}
+
+message RegisterResponse {
+  Token token = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  Token token = 1;
+}
+
+// Token is an RS256 JWT with claims sub, role and kid. There is no refresh token.
+message Token {
+  string access_token = 1;
+  // Always "Bearer".
+  string token_type = 2;
+  // Seconds until expiry: 3600.
+  int64 expires_in = 3;
+}

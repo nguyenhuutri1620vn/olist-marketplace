@@ -99,6 +99,11 @@ jobs:
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
         run: go test ./internal/repository/...
+      - name: identity tests against Postgres
+        working-directory: services/identity-service
+        env:
+          DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
+        run: go test ./internal/repository/... ./cmd/server/...
 
   smoke:
     runs-on: ubuntu-latest
@@ -119,6 +124,22 @@ jobs:
           exit 1
       - name: Gateway reaches a service over traced gRPC
         run: curl -fsS 127.0.0.1:8080/debug/grpc-health/catalog-service
+      - name: identity serves its JWKS inside the compose network
+        run: |
+          docker run --rm --network olist golang:1.27.3-alpine \
+            wget -qO- http://identity-service:8080/.well-known/jwks.json \
+            | jq -e '.keys | length == 1 and .[0].alg == "RS256"'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+      - name: Register and log in against the running identity-service
+        run: |
+          (cd services/identity-service && CGO_ENABLED=0 GOOS=linux go test -c -o "$RUNNER_TEMP/identity.test" ./cmd/server/)
+          docker create --name idlive --network olist \
+            -e IDENTITY_LIVE_GRPC=identity-service:9090 -e IDENTITY_LIVE_HTTP=identity-service:8080 \
+            golang:1.27.3-alpine /identity.test -test.run Live -test.v
+          docker cp "$RUNNER_TEMP/identity.test" idlive:/identity.test
+          docker start -a idlive
       - name: Importer image builds (tools profile is not built by make up)
         run: docker compose -f deployments/docker-compose.yml --profile tools build olist-importer
       - name: Logs on failure

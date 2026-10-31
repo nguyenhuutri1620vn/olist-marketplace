@@ -13,3 +13,10 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-3-import-catalog-reference-data.md`
   summary: Tie the Makefile OLIST_FILES list to the files olist.Load reads (e.g. a test inside tools/olist-importer that parses the Makefile).
   evidence: tests/scaffold pins OLIST_FILES to its own literal list, so adding a CSV to olist.Load would pass CI and fail make import at runtime.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-register-and-log-in.md`
+  summary: Throttle Login (per email and per client) against online password guessing, most likely in the gateway.
+  evidence: Login has no rate limit or lockout; bcrypt cost 10 only slows each guess. Not in Story 1.4's intent.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-4-register-and-log-in.md`
+  summary: Support signing-key rotation (publish every stored key in the JWKS, sign with the newest) and keep the private key out of plain database storage.
+  evidence: `SigningKey` loads only the newest key and stores PKCS#8 DER unencrypted; fine for one local key, not for rotation or production.
+

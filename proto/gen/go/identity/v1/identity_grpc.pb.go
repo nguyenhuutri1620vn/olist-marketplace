@@ -7,7 +7,10 @@
 package identityv1
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,12 +18,23 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	IdentityService_Register_FullMethodName = "/identity.v1.IdentityService/Register"
+	IdentityService_Login_FullMethodName    = "/identity.v1.IdentityService/Login"
+)
+
 // IdentityServiceClient is the client API for IdentityService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// IdentityService is the gRPC contract of identity-service. RPCs arrive with later stories.
+// IdentityService registers Customers and logs Accounts in (FR14, AD-14).
 type IdentityServiceClient interface {
+	// Register creates a Customer Account and logs it in. Registration never
+	// creates a Seller or Admin.
+	Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error)
+	// Login exchanges an email and password for a token. A wrong password and
+	// an unknown email return the same UNAUTHENTICATED error.
+	Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 }
 
 type identityServiceClient struct {
@@ -31,12 +45,38 @@ func NewIdentityServiceClient(cc grpc.ClientConnInterface) IdentityServiceClient
 	return &identityServiceClient{cc}
 }
 
+func (c *identityServiceClient) Register(ctx context.Context, in *RegisterRequest, opts ...grpc.CallOption) (*RegisterResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterResponse)
+	err := c.cc.Invoke(ctx, IdentityService_Register_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *identityServiceClient) Login(ctx context.Context, in *LoginRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, IdentityService_Login_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // IdentityServiceServer is the server API for IdentityService service.
 // All implementations must embed UnimplementedIdentityServiceServer
 // for forward compatibility.
 //
-// IdentityService is the gRPC contract of identity-service. RPCs arrive with later stories.
+// IdentityService registers Customers and logs Accounts in (FR14, AD-14).
 type IdentityServiceServer interface {
+	// Register creates a Customer Account and logs it in. Registration never
+	// creates a Seller or Admin.
+	Register(context.Context, *RegisterRequest) (*RegisterResponse, error)
+	// Login exchanges an email and password for a token. A wrong password and
+	// an unknown email return the same UNAUTHENTICATED error.
+	Login(context.Context, *LoginRequest) (*LoginResponse, error)
 	mustEmbedUnimplementedIdentityServiceServer()
 }
 
@@ -47,6 +87,12 @@ type IdentityServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedIdentityServiceServer struct{}
 
+func (UnimplementedIdentityServiceServer) Register(context.Context, *RegisterRequest) (*RegisterResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedIdentityServiceServer) Login(context.Context, *LoginRequest) (*LoginResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
+}
 func (UnimplementedIdentityServiceServer) mustEmbedUnimplementedIdentityServiceServer() {}
 func (UnimplementedIdentityServiceServer) testEmbeddedByValue()                         {}
 
@@ -68,13 +114,58 @@ func RegisterIdentityServiceServer(s grpc.ServiceRegistrar, srv IdentityServiceS
 	s.RegisterService(&IdentityService_ServiceDesc, srv)
 }
 
+func _IdentityService_Register_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).Register(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_Register_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).Register(ctx, req.(*RegisterRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _IdentityService_Login_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(IdentityServiceServer).Login(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: IdentityService_Login_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(IdentityServiceServer).Login(ctx, req.(*LoginRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // IdentityService_ServiceDesc is the grpc.ServiceDesc for IdentityService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var IdentityService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "identity.v1.IdentityService",
 	HandlerType: (*IdentityServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "identity/v1/identity.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Register",
+			Handler:    _IdentityService_Register_Handler,
+		},
+		{
+			MethodName: "Login",
+			Handler:    _IdentityService_Login_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "identity/v1/identity.proto",
 }
