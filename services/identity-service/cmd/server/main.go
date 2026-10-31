@@ -9,6 +9,8 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
+	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/identity-service/internal/password"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/identity-service/internal/repository"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/identity-service/internal/service"
@@ -32,6 +34,14 @@ func identityService() app.Service {
 		Name:       "identity-service",
 		Migrations: migrations.FS,
 		GRPC:       true,
+		// Login and Register are how a caller gets a token. ImportAccounts is
+		// reachable only on the internal network (the gateway never routes it):
+		// the importer has no token before the Admin exists.
+		Policy: auth.Policy{Public: []string{
+			identityv1.IdentityService_Register_FullMethodName,
+			identityv1.IdentityService_Login_FullMethodName,
+			identityv1.IdentityAdminService_ImportAccounts_FullMethodName,
+		}},
 		Init: func(ctx context.Context, pool *pgxpool.Pool) error {
 			repo := repository.New(pool)
 			var err error

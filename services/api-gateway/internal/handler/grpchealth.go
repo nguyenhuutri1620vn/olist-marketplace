@@ -19,14 +19,14 @@ func RegisterGRPCHealth(mux *http.ServeMux, conns map[string]grpc.ClientConnInte
 		name := r.PathValue("service")
 		conn, ok := conns[name]
 		if !ok {
-			writeError(w, http.StatusNotFound, "NOT_FOUND", "unknown service "+name)
+			WriteError(w, http.StatusNotFound, "NOT_FOUND", "unknown service "+name)
 			return
 		}
 		ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 		defer cancel()
 		resp, err := healthpb.NewHealthClient(conn).Check(ctx, &healthpb.HealthCheckRequest{})
 		if err != nil {
-			writeError(w, http.StatusBadGateway, "UNAVAILABLE", err.Error())
+			WriteError(w, http.StatusBadGateway, "UNAVAILABLE", name+" is unreachable")
 			return
 		}
 		code := http.StatusOK
@@ -35,10 +35,6 @@ func RegisterGRPCHealth(mux *http.ServeMux, conns map[string]grpc.ClientConnInte
 		}
 		writeJSON(w, code, map[string]string{"service": name, "status": resp.GetStatus().String()})
 	})
-}
-
-func writeError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": message}})
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -3,6 +3,7 @@ module github.com/nguyenhuutri1620vn/olist-marketplace/pkg
 go 1.27.0
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.20.1
 	github.com/jackc/pgx/v5 v5.12.0
 	github.com/prometheus/client_golang v1.25.0

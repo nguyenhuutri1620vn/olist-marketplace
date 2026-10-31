@@ -14,10 +14,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
 )
 
@@ -98,6 +101,7 @@ func TestDataServiceMigratesServesGRPCAndBecomesReady(t *testing.T) {
 	t.Setenv("GRPC_ADDR", grpcAddr)
 	poolErr := make(chan error, 1)
 	stop := run(t, app.Service{Name: "catalog-service", Migrations: fstest.MapFS{}, GRPC: true,
+		Policy: auth.Policy{Public: []string{"/test.Ping/Ping"}},
 		RegisterGRPC: func(s *grpc.Server, pool *pgxpool.Pool) {
 			s.RegisterService(&pingDesc, struct{}{})
 			if pool == nil {
@@ -135,9 +139,16 @@ var pingDesc = grpc.ServiceDesc{
 	HandlerType: (*any)(nil),
 	Methods: []grpc.MethodDesc{{
 		MethodName: "Ping",
-		Handler: func(_ any, _ context.Context, dec func(any) error, _ grpc.UnaryServerInterceptor) (any, error) {
+		Handler: func(_ any, ctx context.Context, dec func(any) error, ic grpc.UnaryServerInterceptor) (any, error) {
 			in := &emptypb.Empty{}
-			return in, dec(in)
+			if err := dec(in); err != nil {
+				return nil, err
+			}
+			h := func(context.Context, any) (any, error) { return &emptypb.Empty{}, nil }
+			if ic == nil {
+				return h(ctx, in)
+			}
+			return ic(ctx, in, &grpc.UnaryServerInfo{FullMethod: "/test.Ping/Ping"}, h)
 		},
 	}},
 }
@@ -209,5 +220,26 @@ func TestRunFailsWhenInitFails(t *testing.T) {
 	}})
 	if err == nil || !strings.Contains(err.Error(), "no signing key") {
 		t.Errorf("Run = %v, want the Init error", err)
+	}
+}
+
+func TestGRPCFailsClosedWithoutPolicy(t *testing.T) {
+	t.Setenv("OPS_ADDR", freeAddr(t))
+	grpcAddr := freeAddr(t)
+	t.Setenv("GRPC_ADDR", grpcAddr)
+	stop := run(t, app.Service{Name: "order-service", GRPC: true,
+		RegisterGRPC: func(s *grpc.Server, _ *pgxpool.Pool) { s.RegisterService(&pingDesc, struct{}{}) }})
+	waitReady(t)
+	conn, err := grpcx.Dial(grpcAddr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	err = conn.Invoke(context.Background(), "/test.Ping/Ping", &emptypb.Empty{}, &emptypb.Empty{})
+	if got := status.Code(err); got != codes.Unauthenticated {
+		t.Errorf("undeclared RPC without token: %v, want Unauthenticated", got)
+	}
+	if err := stop(); err != nil {
+		t.Errorf("Run returned %v after cancel, want nil", err)
 	}
 }

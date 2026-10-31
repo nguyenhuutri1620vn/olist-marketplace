@@ -141,6 +141,15 @@ jobs:
             golang:1.27.3-alpine /identity.test -test.run '^TestLiveRegisterAndLogin$' -test.v
           docker cp "$RUNNER_TEMP/identity.test" idlive:/identity.test
           docker start -a idlive
+      - name: Gateway enforces roles (register a Customer, then hit each group)
+        run: |
+          tok=$(curl -fsS -X POST 127.0.0.1:8080/api/auth/register -H 'Content-Type: application/json' \
+            -d '{"email":"ci-customer@example.com","password":"s3cret-pw"}' | jq -er .access_token)
+          code() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+          test "$(code 127.0.0.1:8080/api/checkout)" = 401
+          test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/checkout)" = 404
+          test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/seller/orders)" = 403
+          test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/admin/vouchers)" = 403
       - name: Importer image builds (tools profile is not built by make up)
         run: docker compose -f deployments/docker-compose.yml --profile tools build olist-importer
       - name: Logs on failure

@@ -4,6 +4,7 @@ go 1.27.0
 
 require (
 	github.com/nguyenhuutri1620vn/olist-marketplace/pkg v0.0.0
+	github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go v0.0.0
 	github.com/prometheus/client_golang v1.25.0
 	google.golang.org/grpc v1.85.0
 )
@@ -15,6 +16,7 @@ require (
 	github.com/felixge/httpsnoop v1.1.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang-migrate/migrate/v4 v4.20.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
@@ -52,3 +54,5 @@ require (
 )
 
 replace github.com/nguyenhuutri1620vn/olist-marketplace/pkg => ../../pkg
+
+replace github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go => ../../proto/gen/go

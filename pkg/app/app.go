@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"google.golang.org/grpc"
 
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/bootstrap"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/logger"
@@ -41,6 +42,10 @@ type Service struct {
 	// Init, when set, runs once before RegisterGRPC and API, so both can share
 	// what it builds. pool is nil without Migrations. An error stops startup.
 	Init func(ctx context.Context, pool *pgxpool.Pool) error
+	// Policy says who may call each RPC on the gRPC server; tokens are verified
+	// against JWKS_URL (default identity's JWKS). RPCs it does not declare are
+	// refused, so every service must list its public and role-gated RPCs.
+	Policy auth.Policy
 	// RegisterGRPC, when set with GRPC, registers the service's handlers. pool
 	// is the database pool, nil without Migrations.
 	RegisterGRPC func(s *grpc.Server, pool *pgxpool.Pool)
@@ -50,6 +55,9 @@ type Service struct {
 }
 
 const shutdownTimeout = 10 * time.Second
+
+// DefaultJWKSURL is identity-service's internal JWKS endpoint.
+const DefaultJWKSURL = "http://identity-service:8080/.well-known/jwks.json"
 
 func addr(env, fallback string) string {
 	if v := os.Getenv(env); v != "" {
@@ -136,7 +144,10 @@ func Run(ctx context.Context, s Service) error {
 	var servers []server
 	servers = append(servers, httpServer("ops", addr("OPS_ADDR", ":8090"), ops.Handler(reg, checks...)))
 	if s.GRPC {
-		gs := grpcx.NewServer(reg)
+		verifier := auth.NewVerifier(auth.NewKeySet(addr("JWKS_URL", DefaultJWKSURL)))
+		gs := grpcx.NewServer(reg,
+			grpc.ChainUnaryInterceptor(s.Policy.UnaryInterceptor(verifier)),
+			grpc.ChainStreamInterceptor(s.Policy.StreamInterceptor(verifier)))
 		if s.RegisterGRPC != nil {
 			s.RegisterGRPC(gs, pool)
 		}

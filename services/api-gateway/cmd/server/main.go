@@ -2,12 +2,15 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"google.golang.org/grpc"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
-	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/handler"
+	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/routing"
 )
 
 // upstreams are the services the gateway calls over gRPC, on <name>:9090.
@@ -26,7 +29,8 @@ func api() (http.Handler, func(), error) {
 		}
 	}
 	for _, name := range upstreams {
-		conn, err := grpcx.Dial(name + ":9090")
+		// Every upstream call carries the caller's JWT, which the service re-verifies.
+		conn, err := grpcx.Dial(name+":9090", grpc.WithChainUnaryInterceptor(auth.ForwardToken()))
 		if err != nil {
 			closeAll()
 			return nil, nil, err
@@ -34,7 +38,13 @@ func api() (http.Handler, func(), error) {
 		opened = append(opened, conn)
 		conns[name] = conn
 	}
-	mux := http.NewServeMux()
-	handler.RegisterGRPCHealth(mux, conns)
-	return mux, closeAll, nil
+	jwks := os.Getenv("JWKS_URL")
+	if jwks == "" {
+		jwks = app.DefaultJWKSURL
+	}
+	return routing.New(routing.Deps{
+		Verifier:  auth.NewVerifier(auth.NewKeySet(jwks)),
+		Identity:  identityv1.NewIdentityServiceClient(conns["identity-service"]),
+		Upstreams: conns,
+	}), closeAll, nil
 }
