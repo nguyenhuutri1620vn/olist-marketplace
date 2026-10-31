@@ -36,7 +36,7 @@ Domain words come from the PRD Glossary and are used exactly: Customer, Seller, 
 
 **Role routing:** after login each role goes to its home: Customer → `/`, Seller → `/seller/orders`, Admin → `/admin`. A route for another role shows "You don't have access to this page." with a link home. The gateway's refusal stays the real guard (FR-16).
 
-**No cart** (PRD non-goal). Products are selected for Checkout with checkboxes on the Products page. The selection lives in page state and is lost on reload. [ASSUMPTION]
+**No cart** (PRD non-goal). Products are selected for Checkout with checkboxes on the Products page. The selection lives in page state mirrored to `sessionStorage`, so it survives a reload and the login redirect; it is cleared after a successful Checkout. There is no server-side cart.
 
 ## Voice and Tone
 
@@ -55,14 +55,14 @@ The copy is plain and literal, and it names the backend fact.
 | Component | Used on | Behaviour |
 |---|---|---|
 | Product table | Products | Columns: select checkbox · name (`<Category> #<id4>`) · Category · Seller · price. Category `Select` filters (FR-13). Paginated at 20 per page with server-side paging. |
-| Checkout bar | Products | Sticky bottom bar, shown when ≥ 1 Product is selected: "N items from M Sellers · R$ total · [Check out]". Logged out, "Check out" goes to Login and then returns. |
+| Checkout bar | Products | Sticky bottom bar, shown when ≥ 1 Product is selected: "N items from M Sellers · R$ total · [Check out]". Logged out, "Check out" goes to Login and then returns to the Checkout review with the same selection. |
 | Seller group card | Checkout review | One `Card` per Seller, listing its items and subtotal. A header line says "This will create M Orders." |
 | Status badge | Everywhere an Order appears | See DESIGN.md. Always the raw Order Status word. |
 | Status timeline | Order detail | Vertical list of status changes, oldest first, with timestamps (FR-7). |
-| Pay form | Order detail, only when `created` | Optional Voucher code `Input` · card token `Select` with values "Test card — approves" / "Test card — declines" [ASSUMPTION; values are simulated test tokens, no card numbers] · "Pay R$ X" button. When a Voucher is entered, the form shows "Voucher R$ V · Card R$ remainder". |
+| Pay form | Order detail, only when `created` | Optional Voucher code `Input` · card token `Select` with values "Test card — approves" / "Test card — declines" [ASSUMPTION; values are simulated test tokens, no card numbers] · "Pay R$ X" button. When a Voucher is entered, the form looks it up (`GET /api/vouchers/:code`) and shows "Voucher R$ V · Card R$ remainder". |
 | Refresh button | My Orders, Order detail, Seller Orders | Re-fetches. There is no live push (FR-7). |
-| Date range filter | Seller Revenue, Ops Dashboard | Two native date inputs (from/to) on purchase time. Defaults to the full dataset range 2016-09-01 → 2018-10-31 [ASSUMPTION]. |
-| Ship button | Seller Orders row | Shown only on `processing` rows. Click → "Mark shipped" confirm `Dialog` → row updates to `shipped`. |
+| Date range filter | Seller Revenue, Ops Dashboard | Two native date inputs (from/to) on purchase time. Defaults to 2016-09-01 → today, so both Historical and new Orders are in range. Dates are inclusive, in São Paulo time. |
+| Ship button | Seller Orders row | Shown only on live (non-Historical) `processing` rows. Click → "Mark shipped" confirm `Dialog` → row updates to `shipped`. |
 | Dashboard table + bar cell | Ops Dashboard | Three tables: by Seller state, by Category (with "Uncategorized"), and by Order Status. Each has a total row. |
 | Freshness note | Ops Dashboard | "Updated Xs ago" next to the title, refreshed by each poll. |
 
@@ -71,18 +71,21 @@ The copy is plain and literal, and it names the backend fact.
 | State | Surface | Treatment |
 |---|---|---|
 | Loading | Any table | 5 `Skeleton` rows |
-| Empty, pre-Replay | Seller Revenue, Ops Dashboard | "No data yet. Run `make replay` to stream Historical Orders." (FR-17) |
+| Empty, pre-Replay | Seller Revenue, Ops Dashboard | "No data yet. Run `make replay` to stream Historical Orders." (FR-17). Shown only while there is no data at all; once data exists, a Seller with nothing in range sees R$ 0,00 |
+| Empty Checkout | Checkout review | Opened with no selection → back to Products with toast "Select at least one Product to check out." |
 | Empty, filtered | Any list | "No Orders in this range." / "No Products in this Category." |
 | Checkout placed | Checkout review → My Orders | Toast "M Orders created — one per Seller." Redirect to My Orders with new rows on top |
 | Payment pending | Order detail | After "Pay", the button is disabled with "Processing payment…". The page polls the Order every 1 s for up to 10 s until the status leaves `created` [ASSUMPTION, because the saga is async]. On timeout: "Still processing. Refresh in a moment." |
 | Paid | Order detail | Toast "Payment approved." The badge moves through `approved` → `processing` on refresh |
-| Declined | Order detail | Destructive toast "Card declined. Order canceled." The line "Voucher restored." is added when a Voucher was used (FR-3). The pay form is hidden |
+| Canceled after Pay | Order detail | Destructive toast chosen by the Order's `cancel_reason`: "Card declined. Order canceled." or "Voucher unavailable. Order canceled." The line "Voucher restored." is added only when the Voucher was actually restored (FR-3). The pay form is hidden |
 | Duplicate submit | Pay form | The button is disabled after the first click. The client sends one idempotency key per Order per page visit (FR-4) |
-| Voucher invalid/used | Pay form | Inline error under the field showing the gateway message |
+| Payment already in progress | Order detail | A 409 (e.g. after a reload made a new key) shows "Payment already in progress." and starts the same polling |
+| Voucher unknown/used | Pay form | Found by the lookup before Pay: inline error under the field showing the gateway message; Pay stays disabled until the code is fixed or cleared |
 | Ship refused | Seller Orders | Toast with the gateway message (e.g. Order no longer `processing`) |
 | Unauthenticated / token expired | Any | Redirect to Login with "Session expired. Log in again." and return to the original route afterwards |
 | Forbidden | Any | "You don't have access to this page." |
 | Service down | Any | Destructive toast "Request failed: {code} — {message}". The page stays usable. This is part of the SM-1 demo |
+| Auto-refresh failing | Ops Dashboard | Last good data stays on screen; "Updated Xs ago" keeps counting from the last success; the error toast shows once per outage, not every 2 s |
 
 ## Interaction Primitives
 

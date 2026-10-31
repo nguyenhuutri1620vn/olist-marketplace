@@ -91,10 +91,10 @@ No other synchronous service-to-service call is allowed.
 - **Rule:**
   - Checkout (FR-1) does not start the saga.
   - Paying (FR-2) enters only through `OrderService.PayOrder`. order-service checks that the caller owns the Order and that it is `created`, then writes `AuthorizePayment` to its outbox.
-  - payment-service exposes no gRPC for paying. Its gRPC surface is Voucher admin (FR-19) and the gateway decline-rate setting.
-  - payment-service redeems a Voucher with one conditional update (`… SET used_by_order = $order WHERE code = $code AND used_by_order IS NULL`). Zero rows updated means `PaymentFailed{reason: VOUCHER_UNAVAILABLE}`.
-  - When the card declines, payment-service restores the Voucher itself (only if `used_by_order` equals this Order), then emits `PaymentFailed`.
-  - Any `PaymentFailed` moves the Order to `canceled`.
+  - payment-service exposes no gRPC for paying. Its gRPC surface is Voucher admin (FR-19), the gateway decline-rate setting, and a read-only Customer `LookupVoucher(code)` (face value + usable, `NOT_FOUND` for unknown codes) that the web app calls before Pay for the split display and inline errors. The lookup is advisory; the redemption below stays the only guard.
+  - payment-service redeems a Voucher with one conditional update (`… SET used_by_order = $order WHERE code = $code AND used_by_order IS NULL`). Zero rows updated (unknown or already used code) means `PaymentFailed{reason: VOUCHER_UNAVAILABLE, voucher_restored: false}`.
+  - When the card declines, payment-service restores the Voucher itself (`SET used_by_order = NULL … AND used_by_order = $order`), then emits `PaymentFailed{reason: CARD_DECLINED, voucher_restored}`.
+  - Any `PaymentFailed` for a `created` Order moves it to `canceled`; order-service stores `cancel_reason` and `voucher_restored` on the Order so the UI can name the cause.
   - Shipping and analytics react by choreography.
 
 ```mermaid
@@ -145,12 +145,16 @@ sequenceDiagram
     - `duplicate`
     - `rejected`: domain-invalid. Record it with a reason, ack it, and count it in a metric.
     - `retryable`: an infrastructure error. Back off and do not commit. After N tries, send it to `<topic>.dlq`.
+  - **Undecodable messages** (bad JSON, unsupported major `event_version`) are `rejected`, never retried. An unknown `event_type` on a shared topic is acked as an `applied` no-op.
+  - **DLQ operations.** A metric exposes DLQ depth per topic; `make dlq-redrive TOPIC=<topic>` republishes DLQ messages to the original topic (safe because consumers are idempotent). Demo scripts fail if any DLQ is non-empty.
+  - **New consumer groups** start from the earliest offset (`auto.offset.reset = earliest`).
   - **Projectors** upsert per `(order_id, status)` and never decrement a count below 0.
-  - **Payment requests.** `PayOrder` stores `payment_requests(idempotency_key PK, order_id, request_hash)`.
+  - **Payment requests.** `PayOrder` stores `payment_requests(idempotency_key PK, order_id, request_hash)`, checked under a row lock on the Order.
     - Same key, different hash: `ALREADY_EXISTS`.
     - Order not `created`, or a payment already in flight: `FAILED_PRECONDITION`.
-    - payment-service enforces `UNIQUE(order_id)` on Card Payment and Voucher redemption.
-  - **Checkout requests** carry a `checkout_idempotency_key`. All Orders of one Checkout, plus their outbox rows, are written in one transaction and share a `checkout_id`.
+    - payment-service writes exactly one Payment row per Order (`UNIQUE(order_id)`) for every outcome: Voucher-only (`card_amount = 0`), card, mixed, failed.
+    - Voucher redemption state lives only in `vouchers.used_by_order`, with a unique index where not null; there is no separate redemption table. Voucher value is immutable.
+  - **Checkout requests** carry a `checkout_idempotency_key`, stored in `checkouts(customer_id, idempotency_key, request_hash, checkout_id)` with key `(customer_id, idempotency_key)`. Same key, different hash: `ALREADY_EXISTS`. All Orders of one Checkout, plus their outbox rows, are written in one transaction and share a `checkout_id`.
 
 ### AD-8 — Topics and envelope [ADOPTED]
 
@@ -162,10 +166,11 @@ sequenceDiagram
   - Envelope (JSON):
     - `event_id`, `event_type`, `event_version`, `aggregate_id`, `historical`
     - `occurred_at`: business time; the dataset timestamp for Historical events
-    - `published_at`: relay time, used to measure NFR-4 lag
+    - `published_at`: relay time
+    - `origin_published_at`: equals `published_at` on a first publish; copied unchanged when a service republishes a fact derived from an incoming event (e.g. order-service republishing Replay input). Used to measure NFR-4 lag end to end (AD-17)
     - `traceparent`: W3C; also set as a Kafka header
     - `payload`
-  - Consumers start a child span from `traceparent`.
+  - Consumers start a child span from the `traceparent` header for every message, before any type filter or `historical=true` drop, so a consumer that takes no action still appears in the trace.
 
 ### AD-9 — Event and command catalog
 
@@ -174,7 +179,7 @@ sequenceDiagram
 - **Rule:**
   - `contracts/events/v1` (Go structs plus JSON Schema, used through `pkg/eventbus`) is the only definition of event and command types. A type that is not listed there must not be published.
   - **Order facts, one per status:** `OrderCreated`, `OrderApproved`, `OrderProcessing`, `OrderShipped`, `OrderDelivered`, `OrderCanceled`. Each carries `from_status`, `to_status` and the full Order snapshot (AD-10). When `approved→processing` happens in one transaction, it emits both `OrderApproved` and `OrderProcessing`, in that order.
-  - **Payment:** command `AuthorizePayment{order_id, amount_total, voucher_code?, card_token, idempotency_key}`; facts `PaymentSucceeded` (carries `voucher_amount`) and `PaymentFailed` (carries `reason`). No card number appears anywhere; `card_token` is a simulated test value.
+  - **Payment:** command `AuthorizePayment{order_id, amount_total, voucher_code?, card_token, idempotency_key}`; facts `PaymentSucceeded` (carries `voucher_amount`) and `PaymentFailed` (carries `reason`: `CARD_DECLINED` | `VOUCHER_UNAVAILABLE`, and `voucher_restored`). No card number appears anywhere; `card_token` is a simulated test value.
   - **Shipping:** fact `ShipmentDelivered`.
   - **Replay:** `HistoricalOrderStatusRecorded` (AD-12).
   - **Versioning:** adding a field is a minor `event_version` bump. Renaming or removing a field needs a new major version.
@@ -202,15 +207,18 @@ sequenceDiagram
 - **Binds:** FR-13, FR-17, FR-18
 - **Prevents:** tools coupling to private schemas; Historical Orders counted twice; order-service calling out to enrich Replay data.
 - **Rule:**
-  - **Import.** `tools/olist-importer` loads reference data only, through each owner's admin gRPC (`catalog.ImportProducts/Sellers/Categories`, `identity.ImportAccounts`). These are idempotent upserts keyed by dataset id. catalog derives Product display name, price and freight from the most recent dataset Order Item.
-  - **Replay.** The replayer emits one `HistoricalOrderStatusRecorded` per derived status change, already enriched from the CSVs: `customer_unique_id`, `seller_state`, `category_en`, centavos. Events are sorted by status timestamp and paced by `--from`, `--to` and the speed (default 1 day per second).
+  - **Import.** `tools/olist-importer` loads reference data only, through each owner's admin gRPC (`catalog.ImportProducts/Sellers/Categories`, `identity.ImportAccounts`). These are idempotent upserts keyed by dataset id. catalog derives Product display name, price, freight and Seller from one row: the most recent dataset Order Item (`ORDER BY purchase timestamp DESC, order_id DESC, order_item_id DESC`). A category missing from the translation CSV uses its Portuguese name; "Uncategorized" is a real Category row.
+  - **Replay.** The replayer emits one `HistoricalOrderStatusRecorded` per derived status change, already enriched from the CSVs: `customer_unique_id`, `seller_state`, `category_en`, centavos. Events are sorted by `(status timestamp, status rank)` and paced by `--from`, `--to` and the speed (default 1 day per second).
+  - **Range.** `--from`/`--to` are America/Sao_Paulo dates, both inclusive; without them Replay covers the full dataset. Every status event of an Order purchased in range is published, even if dated after `--to`.
   - **Status mapping:**
     - `purchase` → `created`
     - `approved_at` → `approved`
     - `invoiced` / `processing` → `processing` at `approved_at`
     - `delivered_carrier_date` → `shipped`
     - `delivered_customer_date` → `delivered`
-    - `canceled` / `unavailable` → `canceled` at the last known timestamp
+    - `canceled` / `unavailable` → `canceled` at the last known timestamp; such Orders emit only `created` then `canceled`, so the sequence is allowed by AD-5
+    - A later status whose timestamp is earlier than the previous one is clamped to the previous timestamp.
+    - An Order whose final status has no timestamp emits the statuses it can derive and is counted as `missing_final_ts`.
     - Rows with no usable timestamp are skipped and counted in a replay report.
   - **Event id.** `event_id = UUIDv5(NS_OLIST_REPLAY, order_id + ":" + status)`. The namespace is a constant in `contracts`.
   - **Ingest.** order-service ingests with `historical=true`, bypassing the saga, and re-publishes through its outbox, reusing the incoming `event_id`.
@@ -242,7 +250,7 @@ sequenceDiagram
 
 - **Binds:** FR-6, NFR-1
 - **Prevents:** a crash leaving an Order `shipped` forever.
-- **Rule:** shipping-simulator stores `shipments(order_id PK, deliver_at, delivered)` in its own database, with inbox and outbox like every other service. A poller emits `ShipmentDelivered` once `deliver_at <= now()`. The delay comes from env `SHIPPING_DELAY` (default 3s).
+- **Rule:** shipping-simulator stores `shipments(order_id PK, deliver_at, delivered)` in its own database, with inbox and outbox like every other service. A poller (every ≤ 500 ms) emits `ShipmentDelivered` once `deliver_at <= now()`. The delay comes from env `SHIPPING_DELAY` (default 3s), simulating a courier so demos reach `delivered` quickly; the Order is `delivered` within `SHIPPING_DELAY` + 1 s of the `OrderShipped` commit.
 
 ### AD-17 — Read-model freshness budget
 
@@ -252,7 +260,7 @@ sequenceDiagram
   - Relay poll ≤ 200 ms.
   - analytics commits per batch, ≤ 500 ms.
   - The dashboard auto-refreshes every ≤ 2 s.
-  - analytics exposes a lag metric (`now − published_at`).
+  - analytics exposes a lag histogram measured at apply time, `applied_at − origin_published_at` (AD-8); when nothing is being applied, lag is 0.
 
 ## Consistency Conventions
 

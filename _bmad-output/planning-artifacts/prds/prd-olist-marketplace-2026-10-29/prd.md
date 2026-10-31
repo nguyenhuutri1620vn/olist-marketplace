@@ -107,7 +107,7 @@ The system moves every `approved` Order to `processing` automatically. A Seller 
 The system moves a `shipped` Order to `delivered` automatically.
 
 **Consequences (testable):**
-- With default settings, a `shipped` Order becomes `delivered` within 3 seconds (configurable).
+- A simulated courier delivers a `shipped` Order after `SHIPPING_DELAY` (default 3 seconds, configurable), so demos reach `delivered` quickly; the Order then shows `delivered` within about 1 second more.
 
 #### FR-7: Customer tracks Orders
 
