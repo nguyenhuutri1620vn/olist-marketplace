@@ -101,3 +101,48 @@ func (r *Postgres) SigningKey(ctx context.Context, generate func() (*rsa.Private
 	}
 	return key, nil
 }
+
+// UpsertAccounts inserts or updates seeded Accounts by id, all with hash, in
+// one transaction. Only Accounts already in the reserved domain are updated,
+// so an id that belongs to a registered Account cannot take it over. Such an
+// id, an email owned by another Account, or the same id twice rejects the
+// whole batch with domain.ErrInvalid.
+func (r *Postgres) UpsertAccounts(ctx context.Context, seeds []domain.Seed, hash string) (int, error) {
+	ids := make([]string, len(seeds))
+	emails := make([]string, len(seeds))
+	roles := make([]string, len(seeds))
+	for i, s := range seeds {
+		ids[i], emails[i], roles[i] = s.ID, s.Email, string(s.Role)
+	}
+	var n int64
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		tag, err := tx.Exec(ctx, `
+			INSERT INTO account (id, email, password_hash, role)
+			SELECT id, email, $4, role FROM unnest($1::uuid[], $2::text[], $3::text[]) AS s(id, email, role)
+			ON CONFLICT (id) DO UPDATE SET
+				email = EXCLUDED.email,
+				password_hash = EXCLUDED.password_hash,
+				role = EXCLUDED.role
+			WHERE split_part(account.email, '@', 2) = $5`, ids, emails, roles, hash, domain.ReservedDomain)
+		if err != nil {
+			return err
+		}
+		if n = tag.RowsAffected(); n != int64(len(seeds)) {
+			return fmt.Errorf("%w: %d of %d ids belong to Accounts outside @%s", domain.ErrInvalid,
+				int64(len(seeds))-n, len(seeds), domain.ReservedDomain)
+		}
+		return nil
+	})
+	var pg *pgconn.PgError
+	if errors.As(err, &pg) {
+		switch pg.Code {
+		case "23505", // unique_violation: email owned by another Account
+			"21000": // cardinality_violation: same id twice in one batch
+			return 0, fmt.Errorf("upsert accounts: %w: %s (%s)", domain.ErrInvalid, pg.Message, pg.Detail)
+		}
+	}
+	if err != nil {
+		return 0, fmt.Errorf("upsert accounts: %w", err)
+	}
+	return int(n), nil
+}

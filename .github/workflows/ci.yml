@@ -132,12 +132,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
+      # TestLiveDemoAccounts needs `make import` (the Kaggle data is not in CI).
       - name: Register and log in against the running identity-service
         run: |
           (cd services/identity-service && CGO_ENABLED=0 GOOS=linux go test -c -o "$RUNNER_TEMP/identity.test" ./cmd/server/)
           docker create --name idlive --network olist \
             -e IDENTITY_LIVE_GRPC=identity-service:9090 -e IDENTITY_LIVE_HTTP=identity-service:8080 \
-            golang:1.27.3-alpine /identity.test -test.run Live -test.v
+            golang:1.27.3-alpine /identity.test -test.run '^TestLiveRegisterAndLogin$' -test.v
           docker cp "$RUNNER_TEMP/identity.test" idlive:/identity.test
           docker start -a idlive
       - name: Importer image builds (tools profile is not built by make up)

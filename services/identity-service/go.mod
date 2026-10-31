@@ -6,6 +6,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.12.0
+	github.com/nguyenhuutri1620vn/olist-marketplace/contracts v0.0.0
 	github.com/nguyenhuutri1620vn/olist-marketplace/pkg v0.0.0
 	github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go v0.0.0
 	golang.org/x/crypto v0.57.0
@@ -57,3 +58,5 @@ require (
 replace github.com/nguyenhuutri1620vn/olist-marketplace/pkg => ../../pkg
 
 replace github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go => ../../proto/gen/go
+
+replace github.com/nguyenhuutri1620vn/olist-marketplace/contracts => ../../contracts

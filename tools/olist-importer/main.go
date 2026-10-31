@@ -1,7 +1,9 @@
-// Command olist-importer loads Olist reference data into catalog-service
-// through its admin gRPC (`olist-importer import`). It reads the Kaggle CSVs
-// from DATA_DIR (default /data) and calls CATALOG_ADDR (default
-// catalog-service:9090).
+// Command olist-importer loads Olist reference data into catalog-service and
+// seeds demo Accounts into identity-service, only through their admin gRPC
+// (`olist-importer import`). It reads the Kaggle CSVs from DATA_DIR (default
+// /data), calls CATALOG_ADDR (default catalog-service:9090) and IDENTITY_ADDR
+// (default identity-service:9090), and gives every demo Account the password
+// DEMO_PASSWORD (default olist-demo-2026).
 package main
 
 import (
@@ -17,6 +19,7 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/logger"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/tracing"
 	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
+	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/tools/olist-importer/internal/importer"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/tools/olist-importer/internal/olist"
 )
@@ -58,17 +61,31 @@ func run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("read dataset in %s: %w", dir, err)
 	}
-	conn, err := grpcx.Dial(env("CATALOG_ADDR", "catalog-service:9090"))
+	demo, err := olist.DemoAccounts(dir)
+	if err != nil {
+		return fmt.Errorf("pick demo accounts in %s: %w", dir, err)
+	}
+
+	catalog, err := grpcx.Dial(env("CATALOG_ADDR", "catalog-service:9090"))
 	if err != nil {
 		return err
 	}
-	defer conn.Close()
+	defer catalog.Close()
+	sum, err := importer.Run(ctx, catalogv1.NewCatalogAdminServiceClient(catalog), ds, importer.BatchSize)
+	if err != nil {
+		return err
+	}
 
-	sum, err := importer.Run(ctx, catalogv1.NewCatalogAdminServiceClient(conn), ds, importer.BatchSize)
+	identity, err := grpcx.Dial(env("IDENTITY_ADDR", "identity-service:9090"))
+	if err != nil {
+		return err
+	}
+	defer identity.Close()
+	seeded, err := importer.ImportAccounts(ctx, identityv1.NewIdentityAdminServiceClient(identity), demo, env("DEMO_PASSWORD", "olist-demo-2026"))
 	if err != nil {
 		return err
 	}
 	slog.InfoContext(ctx, "import done", "categories", sum.Categories, "sellers", sum.Sellers,
-		"products", sum.Products, "skipped_products", sum.Skipped)
+		"products", sum.Products, "skipped_products", sum.Skipped, "demo_accounts", seeded)
 	return nil
 }

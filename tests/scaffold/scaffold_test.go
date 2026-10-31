@@ -124,6 +124,7 @@ type composeFile struct {
 		Profiles    []string          `yaml:"profiles"`
 		Networks    []string          `yaml:"networks"`
 		Environment map[string]string `yaml:"environment"`
+		DependsOn   map[string]any    `yaml:"depends_on"`
 		Healthcheck struct {
 			Test []string `yaml:"test"`
 		} `yaml:"healthcheck"`
@@ -321,7 +322,22 @@ func TestMakeImportCopiesEveryDatasetFile(t *testing.T) {
 	}
 	want := []string{
 		"product_category_name_translation.csv", "olist_sellers_dataset.csv", "olist_products_dataset.csv",
-		"olist_orders_dataset.csv", "olist_order_items_dataset.csv",
+		"olist_orders_dataset.csv", "olist_order_items_dataset.csv", "olist_customers_dataset.csv",
 	}
 	assertSet(t, "Makefile OLIST_FILES", strings.Fields(m[1]), want)
+}
+
+func TestImporterSeedsIdentityWithTheDemoPassword(t *testing.T) {
+	imp := loadCompose(t).Services["olist-importer"]
+	for _, dep := range []string{"catalog-service", "identity-service"} {
+		if _, ok := imp.DependsOn[dep]; !ok {
+			t.Errorf("olist-importer does not wait for %s", dep)
+		}
+	}
+	if got := composeDefaults.ReplaceAllString(imp.Environment["DEMO_PASSWORD"], "$1"); len(got) < 8 {
+		t.Errorf("olist-importer DEMO_PASSWORD default %q, want one of at least 8 characters", got)
+	}
+	if !strings.Contains(read(t, "Makefile"), "--wait catalog-service identity-service") {
+		t.Error("make import does not wait for identity-service")
+	}
 }

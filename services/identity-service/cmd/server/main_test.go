@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/nguyenhuutri1620vn/olist-marketplace/contracts/accounts"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
@@ -232,4 +233,81 @@ func TestLiveRegisterAndLogin(t *testing.T) {
 		t.Errorf("wrong password = %v, want Unauthenticated", err)
 	}
 	t.Logf("kid %s, sub %v", set.Keys[0].Kid, sub)
+}
+
+func TestImportedAccountsLogInWithTheDemoPassword(t *testing.T) {
+	dsn, _ := schemaDSN(t)
+	t.Setenv("DATABASE_URL", dsn)
+	t.Setenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://127.0.0.1:1")
+	ctx := context.Background()
+	grpcAddr, httpAddr, _ := start(t)
+	conn, err := grpcx.Dial(grpcAddr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	_, err = identityv1.NewIdentityAdminServiceClient(conn).ImportAccounts(ctx, &identityv1.ImportAccountsRequest{
+		Password: "olist-demo-2026",
+		Accounts: []*identityv1.ImportAccount{
+			{AccountId: "6560211a19b47992c3666cc44a7e94c0", Email: "seller-6560211a@demo.olist.local", Role: identityv1.Role_ROLE_SELLER},
+			{AccountId: "0192f000-0000-7000-8000-00000000ad01", Email: "admin@demo.olist.local", Role: identityv1.Role_ROLE_ADMIN},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	set := fetchJWKS(t, httpAddr)
+	c := identityv1.NewIdentityServiceClient(conn)
+	for email, want := range map[string][2]string{
+		"seller-6560211a@demo.olist.local": {"6560211a-19b4-7992-c366-6cc44a7e94c0", "seller"},
+		"admin@demo.olist.local":           {"0192f000-0000-7000-8000-00000000ad01", "admin"},
+	} {
+		login, err := c.Login(ctx, &identityv1.LoginRequest{Email: email, Password: "olist-demo-2026"})
+		if err != nil {
+			t.Fatalf("%s: %v", email, err)
+		}
+		claims := verify(t, set, login.GetToken().GetAccessToken())
+		if claims["sub"] != want[0] || claims["role"] != want[1] {
+			t.Errorf("%s claims = %v, want sub %s role %s", email, claims, want[0], want[1])
+		}
+	}
+}
+
+// TestLiveDemoAccounts logs in seeded Accounts on a deployed identity-service
+// after `make import` (same env as TestLiveRegisterAndLogin; DEMO_PASSWORD
+// defaults to the documented demo password).
+func TestLiveDemoAccounts(t *testing.T) {
+	grpcAddr, httpAddr := os.Getenv("IDENTITY_LIVE_GRPC"), os.Getenv("IDENTITY_LIVE_HTTP")
+	if grpcAddr == "" || httpAddr == "" {
+		t.Skip("IDENTITY_LIVE_GRPC / IDENTITY_LIVE_HTTP not set")
+	}
+	pw := os.Getenv("DEMO_PASSWORD")
+	if pw == "" {
+		pw = "olist-demo-2026"
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	conn, err := grpcx.Dial(grpcAddr)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	c := identityv1.NewIdentityServiceClient(conn)
+	set := fetchJWKS(t, httpAddr)
+	for email, want := range map[string][2]string{
+		"customer-8d50f5ea@demo.olist.local": {"8d50f5ea-df50-201c-cdce-dfb9e2ac8455", "customer"},
+		"seller-6560211a@demo.olist.local":   {"6560211a-19b4-7992-c366-6cc44a7e94c0", "seller"},
+		accounts.AdminEmail:                  {accounts.AdminAccountID, "admin"},
+	} {
+		login, err := c.Login(ctx, &identityv1.LoginRequest{Email: email, Password: pw})
+		if err != nil {
+			t.Errorf("%s: %v", email, err)
+			continue
+		}
+		claims := verify(t, set, login.GetToken().GetAccessToken())
+		if claims["sub"] != want[0] || claims["role"] != want[1] {
+			t.Errorf("%s claims = %v, want sub %s role %s", email, claims, want[0], want[1])
+		}
+	}
 }

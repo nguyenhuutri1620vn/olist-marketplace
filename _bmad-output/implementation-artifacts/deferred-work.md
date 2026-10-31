@@ -19,4 +19,13 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-1-4-register-and-log-in.md`
   summary: Support signing-key rotation (publish every stored key in the JWKS, sign with the newest) and keep the private key out of plain database storage.
   evidence: `SigningKey` loads only the newest key and stores PKCS#8 DER unencrypted; fine for one local key, not for rotation or production.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-seed-demo-accounts.md`
+  summary: Web Login page hint showing two demo Accounts per role plus the Admin (Story 1.5 AC), built with the Login page.
+  evidence: The web app and its Login page arrive in Story 1.7; the README already lists all 41 demo logins.
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-seed-demo-accounts.md`
+  summary: Protect identity's IdentityAdminService like catalog's admin service (Admin JWT or a separate internal listener) and keep the gateway from routing it.
+  evidence: ImportAccounts can reset every demo password and create Admins for anyone who reaches identity's gRPC port; only the unpublished port limits callers today (Story 1.6).
+- source_spec: `_bmad-output/implementation-artifacts/spec-1-5-seed-demo-accounts.md`
+  summary: Test the importer's run() wiring end to end (env keys, both admin calls) against a fixture dataset, in a test or a CI smoke step.
+  evidence: Only the units and a manual live run cover it; dropping the ImportAccounts call or misspelling DEMO_PASSWORD would pass CI.
 

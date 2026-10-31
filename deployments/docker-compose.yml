@@ -183,7 +183,7 @@ services:
       KAFKA_BROKERS: kafka:9092
 
   # On demand only (`make import`), never on `make up`: loads reference data
-  # through catalog's admin gRPC (AD-12). `make import` copies the CSVs in.
+  # and demo Accounts through catalog's and identity's admin gRPC (AD-12). `make import` copies the CSVs in.
   olist-importer:
     profiles: ["tools"]
     build:
@@ -192,8 +192,11 @@ services:
     command: ["import"]
     environment:
       <<: *env
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-olist-demo-2026}
     depends_on:
       catalog-service:
+        condition: service_healthy
+      identity-service:
         condition: service_healthy
 
 networks:

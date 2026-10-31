@@ -154,3 +154,121 @@ func TestConcurrentStartupsShareOneKey(t *testing.T) {
 		t.Errorf("keys stored %d, ids %v; want one shared key", n, ids)
 	}
 }
+
+func seeds(t *testing.T) []domain.Seed {
+	t.Helper()
+	var out []domain.Seed
+	for _, s := range []struct {
+		id, email string
+		role      domain.Role
+	}{
+		{"8d50f5eadf50201ccdcedfb9e2ac8455", "customer-8d50f5ea@demo.olist.local", domain.RoleCustomer},
+		{"6560211a19b47992c3666cc44a7e94c0", "seller-6560211a@demo.olist.local", domain.RoleSeller},
+		{"0192f000-0000-7000-8000-00000000ad01", "admin@demo.olist.local", domain.RoleAdmin},
+	} {
+		seed, err := domain.NewSeed(s.id, s.email, s.role)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, seed)
+	}
+	return out
+}
+
+func TestUpsertAccountsIsIdempotentAndUpdatesTheHash(t *testing.T) {
+	repo, pool := newRepo(t)
+	ctx := context.Background()
+	if err := repo.CreateAccount(ctx, account(id1, "ana@example.com")); err != nil {
+		t.Fatal(err)
+	}
+	for i, hash := range []string{"$2a$10$first", "$2a$10$second"} {
+		n, err := repo.UpsertAccounts(ctx, seeds(t), hash)
+		if err != nil || n != 3 {
+			t.Fatalf("run %d: UpsertAccounts = %d, %v", i+1, n, err)
+		}
+	}
+	rows, err := pool.Query(ctx, `SELECT role, count(*), min(password_hash) FROM account GROUP BY role ORDER BY role`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	got := map[string]int{}
+	for rows.Next() {
+		var role, hash string
+		var n int
+		if err := rows.Scan(&role, &n, &hash); err != nil {
+			t.Fatal(err)
+		}
+		got[role] = n
+		if role != "customer" && hash != "$2a$10$second" {
+			t.Errorf("%s hash = %q, want the latest", role, hash)
+		}
+	}
+	if got["admin"] != 1 || got["seller"] != 1 || got["customer"] != 2 {
+		t.Errorf("accounts by role = %v, want admin 1, seller 1, customer 2 (seeded + registered)", got)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	reg, err := repo.AccountByEmail(ctx, "ana@example.com")
+	if err != nil || reg.PasswordHash != "$2a$10$hash" {
+		t.Errorf("registered Account changed: %+v, %v", reg, err)
+	}
+}
+
+func TestUpsertAccountsRejectsEmailOwnedByAnotherAccount(t *testing.T) {
+	repo, pool := newRepo(t)
+	ctx := context.Background()
+	if _, err := repo.UpsertAccounts(ctx, seeds(t), "$2a$10$h"); err != nil {
+		t.Fatal(err)
+	}
+	clash, err := domain.NewSeed("0192f000-0000-7000-8000-000000000999", "admin@demo.olist.local", domain.RoleCustomer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	extra, _ := domain.NewSeed("0192f000-0000-7000-8000-000000000998", "new@demo.olist.local", domain.RoleCustomer)
+	if _, err := repo.UpsertAccounts(ctx, []domain.Seed{extra, clash}, "$2a$10$h"); !errors.Is(err, domain.ErrInvalid) {
+		t.Errorf("err = %v, want ErrInvalid", err)
+	}
+	var n int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM account`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	if n != 3 {
+		t.Errorf("accounts = %d, want 3 (batch rolled back)", n)
+	}
+}
+
+func TestUpsertAccountsNeverTakesOverARegisteredAccount(t *testing.T) {
+	repo, _ := newRepo(t)
+	ctx := context.Background()
+	if err := repo.CreateAccount(ctx, account(id1, "ana@example.com")); err != nil {
+		t.Fatal(err)
+	}
+	takeover, err := domain.NewSeed(id1, "x@demo.olist.local", domain.RoleAdmin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.UpsertAccounts(ctx, append(seeds(t), takeover), "$2a$10$attacker"); !errors.Is(err, domain.ErrInvalid) {
+		t.Errorf("err = %v, want ErrInvalid", err)
+	}
+	got, err := repo.AccountByEmail(ctx, "ana@example.com")
+	if err != nil || got.Role != domain.RoleCustomer || got.PasswordHash != "$2a$10$hash" {
+		t.Errorf("registered Account = %+v, %v; want it unchanged", got, err)
+	}
+	if _, err := repo.AccountByEmail(ctx, "admin@demo.olist.local"); !errors.Is(err, domain.ErrAccountNotFound) {
+		t.Errorf("rest of the batch was applied (err %v), want it rolled back", err)
+	}
+}
+
+func TestUpsertAccountsRejectsTheSameIDTwice(t *testing.T) {
+	repo, pool := newRepo(t)
+	s := seeds(t)
+	if _, err := repo.UpsertAccounts(context.Background(), []domain.Seed{s[0], s[0]}, "$2a$10$h"); !errors.Is(err, domain.ErrInvalid) {
+		t.Errorf("err = %v, want ErrInvalid", err)
+	}
+	var n int
+	if err := pool.QueryRow(context.Background(), `SELECT count(*) FROM account`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("accounts = %d (%v), want 0", n, err)
+	}
+}

@@ -40,10 +40,11 @@ func (fakeIssuer) Issue(sub string, role domain.Role) (token.Token, error) {
 	return token.Token{AccessToken: sub + "|" + string(role), ExpiresIn: 3600}, nil
 }
 
-// countingHasher wraps bcrypt at minimum cost and counts comparisons.
-type countingHasher struct{ compares int }
+// countingHasher wraps bcrypt at minimum cost and counts hashes and comparisons.
+type countingHasher struct{ hashes, compares int }
 
 func (h *countingHasher) Hash(pw string) (string, error) {
+	h.hashes++
 	b, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.MinCost)
 	return string(b), err
 }

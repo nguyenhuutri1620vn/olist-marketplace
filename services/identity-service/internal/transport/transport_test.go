@@ -209,3 +209,58 @@ func TestContextErrorsKeepTheirCode(t *testing.T) {
 		}
 	}
 }
+
+type memSeeds struct{ got []domain.Seed }
+
+func (m *memSeeds) UpsertAccounts(_ context.Context, seeds []domain.Seed, _ string) (int, error) {
+	m.got = seeds
+	return len(seeds), nil
+}
+
+func adminClient(t *testing.T, store service.SeedStore) identityv1.IdentityAdminServiceClient {
+	t.Helper()
+	lis := bufconn.Listen(1 << 20)
+	srv := grpc.NewServer()
+	transport.RegisterAdmin(srv, service.NewSeeder(store, password.Bcrypt{Cost: bcrypt.MinCost}))
+	go srv.Serve(lis)
+	t.Cleanup(srv.Stop)
+	conn, err := grpc.NewClient("passthrough:///bufnet",
+		grpc.WithContextDialer(func(ctx context.Context, _ string) (net.Conn, error) { return lis.DialContext(ctx) }),
+		grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { conn.Close() })
+	return identityv1.NewIdentityAdminServiceClient(conn)
+}
+
+func TestImportAccountsMapsRequest(t *testing.T) {
+	store := &memSeeds{}
+	resp, err := adminClient(t, store).ImportAccounts(context.Background(), &identityv1.ImportAccountsRequest{
+		Password: "olist-demo-2026",
+		Accounts: []*identityv1.ImportAccount{
+			{AccountId: "6560211a19b47992c3666cc44a7e94c0", Email: "seller-6560211a@demo.olist.local", Role: identityv1.Role_ROLE_SELLER},
+			{AccountId: "0192f000-0000-7000-8000-00000000ad01", Email: "admin@demo.olist.local", Role: identityv1.Role_ROLE_ADMIN},
+		},
+	})
+	if err != nil || resp.GetUpserted() != 2 {
+		t.Fatalf("ImportAccounts = %v, %v", resp, err)
+	}
+	if store.got[0].Role != domain.RoleSeller || store.got[0].ID != "6560211a-19b4-7992-c366-6cc44a7e94c0" || store.got[1].Role != domain.RoleAdmin {
+		t.Errorf("seeds = %+v", store.got)
+	}
+}
+
+func TestImportAccountsRejectsInvalidBatch(t *testing.T) {
+	c := adminClient(t, &memSeeds{})
+	for name, req := range map[string]*identityv1.ImportAccountsRequest{
+		"outside domain": {Password: "olist-demo-2026", Accounts: []*identityv1.ImportAccount{{AccountId: "6560211a19b47992c3666cc44a7e94c0", Email: "x@example.com", Role: identityv1.Role_ROLE_SELLER}}},
+		"no role":        {Password: "olist-demo-2026", Accounts: []*identityv1.ImportAccount{{AccountId: "6560211a19b47992c3666cc44a7e94c0", Email: "x@demo.olist.local"}}},
+		"bad id":         {Password: "olist-demo-2026", Accounts: []*identityv1.ImportAccount{{AccountId: "x", Email: "x@demo.olist.local", Role: identityv1.Role_ROLE_SELLER}}},
+		"short password": {Password: "short", Accounts: []*identityv1.ImportAccount{{AccountId: "6560211a19b47992c3666cc44a7e94c0", Email: "x@demo.olist.local", Role: identityv1.Role_ROLE_SELLER}}},
+	} {
+		if _, err := c.ImportAccounts(context.Background(), req); status.Code(err) != codes.InvalidArgument {
+			t.Errorf("%s: err = %v, want InvalidArgument", name, err)
+		}
+	}
+}

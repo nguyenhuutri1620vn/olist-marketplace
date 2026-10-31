@@ -26,6 +26,7 @@ func identityService() app.Service {
 	var (
 		key      token.Key
 		accounts *service.Accounts
+		seeder   *service.Seeder
 	)
 	return app.Service{
 		Name:       "identity-service",
@@ -37,11 +38,13 @@ func identityService() app.Service {
 			if key, err = repo.SigningKey(ctx, token.GenerateKey); err != nil {
 				return err
 			}
+			seeder = service.NewSeeder(repo, password.Bcrypt{})
 			accounts, err = service.NewAccounts(repo, password.Bcrypt{}, token.NewIssuer(key, time.Now), service.NewV7ID)
 			return err
 		},
 		RegisterGRPC: func(s *grpc.Server, _ *pgxpool.Pool) {
 			transport.RegisterIdentity(s, accounts)
+			transport.RegisterAdmin(s, seeder)
 		},
 		// Internal only (not published): the gateway and services fetch the
 		// JWKS here to verify tokens.

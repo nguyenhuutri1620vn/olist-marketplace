@@ -3,6 +3,7 @@ module github.com/nguyenhuutri1620vn/olist-marketplace/tools/olist-importer
 go 1.27.0
 
 require (
+	github.com/nguyenhuutri1620vn/olist-marketplace/contracts v0.0.0
 	github.com/nguyenhuutri1620vn/olist-marketplace/pkg v0.0.0
 	github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go v0.0.0
 	google.golang.org/grpc v1.85.0
@@ -42,3 +43,5 @@ require (
 replace github.com/nguyenhuutri1620vn/olist-marketplace/pkg => ../../pkg
 
 replace github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go => ../../proto/gen/go
+
+replace github.com/nguyenhuutri1620vn/olist-marketplace/contracts => ../../contracts

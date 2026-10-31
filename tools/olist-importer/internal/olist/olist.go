@@ -26,6 +26,7 @@ const (
 	ProductsFile     = "olist_products_dataset.csv"
 	OrdersFile       = "olist_orders_dataset.csv"
 	OrderItemsFile   = "olist_order_items_dataset.csv"
+	CustomersFile    = "olist_customers_dataset.csv"
 )
 
 // Category is a dataset Category; NameEN is empty when it has no translation.

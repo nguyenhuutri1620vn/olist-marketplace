@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package identity.v1;
+
+import "identity/v1/identity.proto";
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1;identityv1";
+
+// IdentityAdminService seeds demo Accounts (FR15, AD-12). ImportAccounts is an
+// idempotent upsert keyed by Account id; a batch is applied whole or not at all.
+service IdentityAdminService {
+  rpc ImportAccounts(ImportAccountsRequest) returns (ImportAccountsResponse);
+}
+
+message ImportAccountsRequest {
+  repeated ImportAccount accounts = 1;
+  // Shared demo password for every Account in the batch; stored only as a
+  // bcrypt hash.
+  string password = 2;
+}
+
+// ImportAccount is a seeded Account. Its email must be in @demo.olist.local.
+message ImportAccount {
+  // Dataset id (32 hex digits) or canonical uuid.
+  string account_id = 1;
+  string email = 2;
+  Role role = 3;
+}
+
+message ImportAccountsResponse {
+  int32 upserted = 1;
+}

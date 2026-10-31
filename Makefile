@@ -5,7 +5,7 @@ MODULES := pkg contracts proto/gen/go tests tools/olist-importer
 COMPOSE := docker compose -f deployments/docker-compose.yml
 BUF := go run github.com/bufbuild/buf/cmd/buf@v1.75.0
 # Kaggle CSVs that `make import` copies into the importer container.
-OLIST_FILES := product_category_name_translation.csv olist_sellers_dataset.csv olist_products_dataset.csv olist_orders_dataset.csv olist_order_items_dataset.csv
+OLIST_FILES := product_category_name_translation.csv olist_sellers_dataset.csv olist_products_dataset.csv olist_orders_dataset.csv olist_order_items_dataset.csv olist_customers_dataset.csv
 IMPORTER := $(COMPOSE) --profile tools
 # Baseline for buf breaking; CI overrides it with the PR's base branch.
 BUF_AGAINST ?= ../.git\#branch=develop,subdir=proto
@@ -36,11 +36,13 @@ up:
 down:
 	$(COMPOSE) down
 
-# Load Categories, Sellers and Products into catalog (idempotent; FR17).
+# Load Categories, Sellers and Products into catalog and seed the 41 demo
+# Accounts into identity (idempotent; FR15, FR17). DEMO_PASSWORD overrides the
+# demo password.
 # tar --no-xattrs: macOS tags downloads with xattrs that docker cp cannot set.
 import:
 	@for f in $(OLIST_FILES); do test -f data/$$f || { echo "missing data/$$f: download the Olist dataset from Kaggle into data/"; exit 1; }; done
-	$(COMPOSE) up -d --wait catalog-service
+	$(COMPOSE) up -d --wait catalog-service identity-service
 	$(IMPORTER) rm -fsv olist-importer
 	$(IMPORTER) create --build olist-importer
 	COPYFILE_DISABLE=1 tar --no-xattrs -C data -cf - $(OLIST_FILES) | docker cp - "$$($(IMPORTER) ps -aq olist-importer)":/data
