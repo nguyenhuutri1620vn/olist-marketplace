@@ -1,8 +1,24 @@
 global:
   scrape_interval: 15s
 
-# Service scrape targets arrive with Story 1.2.
 scrape_configs:
   - job_name: prometheus
     static_configs:
       - targets: ["localhost:9090"]
+
+  # Every service exposes /metrics on its internal ops port.
+  - job_name: services
+    scrape_interval: 5s
+    static_configs:
+      - targets:
+          - api-gateway:8090
+          - identity-service:8090
+          - catalog-service:8090
+          - order-service:8090
+          - payment-service:8090
+          - shipping-simulator:8090
+          - analytics-service:8090
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: "([^:]+):.*"
+        target_label: service

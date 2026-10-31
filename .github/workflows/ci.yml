@@ -93,7 +93,7 @@ jobs:
         working-directory: pkg
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
-        run: go test ./dbmigrate/... ./bootstrap/...
+        run: go test ./dbmigrate/... ./bootstrap/... ./app/...
 
   smoke:
     runs-on: ubuntu-latest
@@ -103,6 +103,17 @@ jobs:
         run: make up
       - name: Database isolation
         run: make check-db-isolation
+      - name: Prometheus scrapes every service
+        run: |
+          for i in $(seq 20); do
+            down=$(curl -s 127.0.0.1:9090/api/v1/targets | jq '[.data.activeTargets[] | select(.health != "up")] | length')
+            [ "$down" = "0" ] && exit 0
+            sleep 3
+          done
+          curl -s 127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {scrapeUrl, health, lastError}'
+          exit 1
+      - name: Gateway reaches a service over traced gRPC
+        run: curl -fsS 127.0.0.1:8080/debug/grpc-health/catalog-service
       - name: Logs on failure
         if: failure()
         run: docker compose -f deployments/docker-compose.yml logs --tail 100

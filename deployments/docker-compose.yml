@@ -3,10 +3,31 @@
 # localhost (AD-14); service ports and Postgres stay internal. The web container
 # arrives in Story 1.7.
 
+# Every service: traces to Jaeger over OTLP/HTTP, and the binary probes its
+# own /readyz (distroless has no curl), so `make up --wait` means ready.
+x-env: &env
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4318
+
+x-healthcheck: &healthcheck
+  test: ["CMD", "/server", "healthcheck"]
+  interval: 2s
+  timeout: 5s
+  retries: 30
+
 x-service: &service
   restart: on-failure
+  healthcheck: *healthcheck
   depends_on:
     postgres:
+      condition: service_healthy
+
+x-kafka-service: &kafka-service
+  restart: on-failure
+  healthcheck: *healthcheck
+  depends_on:
+    postgres:
+      condition: service_healthy
+    kafka:
       condition: service_healthy
 
 services:
@@ -65,7 +86,7 @@ services:
       - "127.0.0.1:9090:9090"
 
   grafana:
-    image: grafana/grafana:13.3.0
+    build: ./grafana
     ports:
       - "127.0.0.1:3000:3000"
 
@@ -85,6 +106,21 @@ services:
       context: ..
       dockerfile: services/api-gateway/Dockerfile
     restart: on-failure
+    healthcheck: *healthcheck
+    # The gateway is only useful once the services it calls are ready.
+    depends_on:
+      identity-service:
+        condition: service_healthy
+      catalog-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      analytics-service:
+        condition: service_healthy
+    environment:
+      <<: *env
     ports:
       - "127.0.0.1:8080:8080"
 
@@ -94,6 +130,7 @@ services:
       context: ..
       dockerfile: services/identity-service/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://identity:${IDENTITY_DB_PASSWORD:-identity}@postgres:5432/identity?sslmode=disable
 
   catalog-service:
@@ -102,39 +139,48 @@ services:
       context: ..
       dockerfile: services/catalog-service/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://catalog:${CATALOG_DB_PASSWORD:-catalog}@postgres:5432/catalog?sslmode=disable
 
   order-service:
-    <<: *service
+    <<: *kafka-service
     build:
       context: ..
       dockerfile: services/order-service/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://order:${ORDER_DB_PASSWORD:-order}@postgres:5432/order?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
 
   payment-service:
-    <<: *service
+    <<: *kafka-service
     build:
       context: ..
       dockerfile: services/payment-service/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://payment:${PAYMENT_DB_PASSWORD:-payment}@postgres:5432/payment?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
 
   shipping-simulator:
-    <<: *service
+    <<: *kafka-service
     build:
       context: ..
       dockerfile: services/shipping-simulator/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://shipping:${SHIPPING_DB_PASSWORD:-shipping}@postgres:5432/shipping?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
 
   analytics-service:
-    <<: *service
+    <<: *kafka-service
     build:
       context: ..
       dockerfile: services/analytics-service/Dockerfile
     environment:
+      <<: *env
       DATABASE_URL: postgres://analytics:${ANALYTICS_DB_PASSWORD:-analytics}@postgres:5432/analytics?sslmode=disable
+      KAFKA_BROKERS: kafka:9092
 
 networks:
   default:

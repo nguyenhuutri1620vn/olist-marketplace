@@ -120,6 +120,9 @@ type composeFile struct {
 		Ports       []any             `yaml:"ports"`
 		Networks    []string          `yaml:"networks"`
 		Environment map[string]string `yaml:"environment"`
+		Healthcheck struct {
+			Test []string `yaml:"test"`
+		} `yaml:"healthcheck"`
 	}
 	Networks map[string]any
 }
@@ -228,4 +231,66 @@ func TestDataServicesConnectToTheirOwnDatabase(t *testing.T) {
 // dbName is the database (and DB user) name of a service: identity-service → identity.
 func dbName(service string) string {
 	return strings.TrimSuffix(strings.TrimSuffix(service, "-service"), "-simulator")
+}
+
+func TestEveryServiceHasAReadinessHealthcheck(t *testing.T) {
+	c := loadCompose(t)
+	want := []string{"CMD", "/server", "healthcheck"}
+	for _, s := range services {
+		if got := c.Services[s].Healthcheck.Test; !slices.Equal(got, want) {
+			t.Errorf("%s healthcheck = %v, want %v", s, got, want)
+		}
+	}
+}
+
+func TestPrometheusScrapesEveryServiceOpsPort(t *testing.T) {
+	var cfg struct {
+		ScrapeConfigs []struct {
+			StaticConfigs []struct {
+				Targets []string `yaml:"targets"`
+			} `yaml:"static_configs"`
+		} `yaml:"scrape_configs"`
+	}
+	if err := yaml.Unmarshal([]byte(read(t, "deployments/prometheus/prometheus.yml")), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	var targets []string
+	for _, sc := range cfg.ScrapeConfigs {
+		for _, st := range sc.StaticConfigs {
+			targets = append(targets, st.Targets...)
+		}
+	}
+	for _, s := range services {
+		if !slices.Contains(targets, s+":8090") {
+			t.Errorf("prometheus does not scrape %s:8090 (targets %v)", s, targets)
+		}
+	}
+}
+
+func TestGrafanaProvisionsPrometheusAndJaeger(t *testing.T) {
+	var cfg struct {
+		Datasources []struct {
+			Type string `yaml:"type"`
+			URL  string `yaml:"url"`
+		} `yaml:"datasources"`
+	}
+	if err := yaml.Unmarshal([]byte(read(t, "deployments/grafana/datasources.yml")), &cfg); err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, d := range cfg.Datasources {
+		got[d.Type] = d.URL
+	}
+	if got["prometheus"] != "http://prometheus:9090" || got["jaeger"] != "http://jaeger:16686" {
+		t.Errorf("grafana data sources = %v, want prometheus and jaeger", got)
+	}
+}
+
+func TestEveryServiceExportsTracesToJaeger(t *testing.T) {
+	c := loadCompose(t)
+	for _, s := range services {
+		if got := c.Services[s].Environment["OTEL_EXPORTER_OTLP_ENDPOINT"]; got != "http://jaeger:4318" {
+			t.Errorf("%s OTEL_EXPORTER_OTLP_ENDPOINT = %q, want http://jaeger:4318", s, got)
+		}
+	}
 }
