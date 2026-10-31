@@ -10,7 +10,7 @@ IMPORTER := $(COMPOSE) --profile tools
 # Baseline for buf breaking; CI overrides it with the PR's base branch.
 BUF_AGAINST ?= ../.git\#branch=develop,subdir=proto
 
-.PHONY: build test tidy run-% up down import proto proto-generate proto-lint proto-breaking check-db-isolation
+.PHONY: build test tidy run-% up down import web-test proto proto-generate proto-lint proto-breaking check-db-isolation
 
 build:
 	@for s in $(SERVICES); do \
@@ -29,6 +29,10 @@ tidy:
 
 run-%:
 	cd services/$* && go run ./cmd/server
+
+# The web app's lint, tests and build (npm 11 / Node 24; see web/README.md).
+web-test:
+	cd web && npm ci && npm run lint && npm test && npm run build
 
 up:
 	$(COMPOSE) up -d --build --wait

@@ -24,13 +24,14 @@ Cần Go 1.27 và Docker.
 make build                # build mọi service vào ./bin
 make test                 # test mọi service và module dùng chung
 make proto                # buf generate + lint + breaking (so với develop)
-make up                   # docker compose: 7 service + Postgres, Kafka, Jaeger, Prometheus, Grafana, kafka-ui
+make up                   # docker compose: web, 7 service + Postgres, Kafka, Jaeger, Prometheus, Grafana, kafka-ui
 make import               # nạp Category, Seller, Product vào catalog và 41 account demo vào identity (chạy lại không tạo trùng)
 make check-db-isolation   # kiểm tra mỗi DB user chỉ vào được DB của mình
+make web-test             # lint, test và build web app (Node 24)
 make down
 ```
 
-Port mở ra host (chỉ trên `127.0.0.1`): api-gateway `8080`, Jaeger `16686`, Prometheus `9090`, Grafana `3000`, kafka-ui `8081`.
+Port mở ra host (chỉ trên `127.0.0.1`): web app `5173` (mở http://127.0.0.1:5173), api-gateway `8080`, Jaeger `16686`, Prometheus `9090`, Grafana `3000`, kafka-ui `8081`.
 
 `make import` cần dataset Olist (Kaggle) trong `data/`. Importer chạy trong container trên mạng compose và chỉ gọi admin gRPC của catalog-service và identity-service. Biến môi trường của importer: `DATA_DIR` (mặc định `/data`), `CATALOG_ADDR` (mặc định `catalog-service:9090`), `IDENTITY_ADDR` (mặc định `identity-service:9090`), `DEMO_PASSWORD` (mặc định `olist-demo-2026`). Test `TestLoadRealDataset` chỉ chạy khi đặt `OLIST_DATA_DIR` trỏ tới thư mục CSV.
 

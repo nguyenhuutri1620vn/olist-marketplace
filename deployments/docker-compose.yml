@@ -1,7 +1,6 @@
 # Local runtime: every service plus infrastructure on one network (NFR-6).
-# Only api-gateway and the observability UIs publish host ports, bound to
-# localhost (AD-14); service ports and Postgres stay internal. The web container
-# arrives in Story 1.7.
+# Only api-gateway, web and the observability UIs publish host ports, bound to
+# localhost (AD-14); service ports and Postgres stay internal.
 
 # Every service: traces to Jaeger over OTLP/HTTP, and the binary probes its
 # own /readyz (distroless has no curl), so `make up --wait` means ready.
@@ -123,6 +122,21 @@ services:
       <<: *env
     ports:
       - "127.0.0.1:8080:8080"
+
+  # The SPA: nginx serves it and proxies /api/ to the gateway (UX-DR1).
+  web:
+    build: ../web
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5173:8080"
 
   identity-service:
     <<: *service

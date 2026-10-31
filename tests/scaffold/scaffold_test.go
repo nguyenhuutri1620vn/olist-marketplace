@@ -31,7 +31,10 @@ var dataServices = services[1:]
 var grpcServices = []string{"identity", "catalog", "order", "payment", "analytics"}
 
 // publishedPorts are the only compose services allowed to publish host ports.
-var publishedPorts = []string{"api-gateway", "jaeger", "prometheus", "grafana", "kafka-ui"}
+var publishedPorts = []string{"api-gateway", "web", "jaeger", "prometheus", "grafana", "kafka-ui"}
+
+// apps are the non-Go containers built from this repo.
+var apps = []string{"web"}
 
 var infra = []string{"postgres", "kafka", "jaeger", "prometheus", "grafana", "kafka-ui"}
 
@@ -147,7 +150,7 @@ func TestComposeRunsServicesAndInfraOnOneNetwork(t *testing.T) {
 	for name := range c.Services {
 		got = append(got, name)
 	}
-	assertSet(t, "compose services", got, slices.Concat(services, infra, tools))
+	assertSet(t, "compose services", got, slices.Concat(services, infra, tools, apps))
 	if len(c.Networks) != 1 {
 		t.Errorf("compose networks = %d, want exactly 1", len(c.Networks))
 	}
@@ -339,5 +342,21 @@ func TestImporterSeedsIdentityWithTheDemoPassword(t *testing.T) {
 	}
 	if !strings.Contains(read(t, "Makefile"), "--wait catalog-service identity-service") {
 		t.Error("make import does not wait for identity-service")
+	}
+}
+
+func TestWebIsServedOnLocalhostAndTalksOnlyToTheGateway(t *testing.T) {
+	web := loadCompose(t).Services["web"]
+	if len(web.Ports) != 1 || web.Ports[0] != "127.0.0.1:5173:8080" {
+		t.Errorf("web ports = %v, want [127.0.0.1:5173:8080]", web.Ports)
+	}
+	if _, ok := web.DependsOn["api-gateway"]; !ok || len(web.DependsOn) != 1 {
+		t.Errorf("web depends_on = %v, want only api-gateway", web.DependsOn)
+	}
+	conf := read(t, "web/nginx.conf")
+	// Every upstream URL in the config (proxy_pass may go through a variable).
+	upstreams := regexp.MustCompile(`https?://([^;/\s]+)`).FindAllStringSubmatch(conf, -1)
+	if len(upstreams) != 1 || upstreams[0][1] != "api-gateway:8080" || !strings.Contains(conf, "proxy_pass") {
+		t.Errorf("web/nginx.conf proxies to %v, want only api-gateway:8080", upstreams)
 	}
 }
