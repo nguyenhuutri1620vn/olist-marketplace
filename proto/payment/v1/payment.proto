@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/payment/v1;paymentv1";
+
+// PaymentService is the gRPC contract of payment-service. RPCs arrive with later stories.
+service PaymentService {}

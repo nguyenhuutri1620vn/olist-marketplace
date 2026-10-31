@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package identity.v1;
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1;identityv1";
+
+// IdentityService is the gRPC contract of identity-service. RPCs arrive with later stories.
+service IdentityService {}

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package catalog.v1;
 
-option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/catalog/v1;catalogv1";
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1";
 
+// CatalogService is the gRPC contract of catalog-service. RPCs arrive with later stories.
 service CatalogService {}

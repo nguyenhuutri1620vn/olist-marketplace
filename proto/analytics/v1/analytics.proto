@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package analytics.v1;
+
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/analytics/v1;analyticsv1";
+
+// AnalyticsService is the gRPC contract of analytics-service. RPCs arrive with later stories.
+service AnalyticsService {}

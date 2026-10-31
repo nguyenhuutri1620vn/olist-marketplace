@@ -1,0 +1,11 @@
+version: v2
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE
+  # go_package only affects generated Go imports, which are compile-checked
+  # in this repo; it moved once to proto/gen/go.
+  except:
+    - FILE_SAME_GO_PACKAGE

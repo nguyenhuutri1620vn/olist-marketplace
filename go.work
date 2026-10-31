@@ -1,13 +1,18 @@
-go 1.23.2
+go 1.27.0
+
+toolchain go1.27.3
 
 use (
+	./contracts
 	./pkg
+	./proto/gen/go
 	./services/analytics-service
 	./services/api-gateway
 	./services/catalog-service
-	./services/customer-service
+	./services/identity-service
 	./services/order-service
 	./services/payment-service
-	./services/review-service
+	./services/shipping-simulator
+	./tests
 	./tools/olist-importer
 )

@@ -1,0 +1,82 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 10-31-2026 13:11
+last_updated: 10-31-2026 13:50
+project: olist-marketplace
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+development_status:
+  epic-1: in-progress
+  1-1-align-the-repo-scaffold-and-start-the-platform-with-one-comm: review
+  1-2-observability-baseline-in-every-service: backlog
+  1-3-import-catalog-reference-data: backlog
+  1-4-register-and-log-in: backlog
+  1-5-seed-demo-accounts: backlog
+  1-6-gateway-authentication-and-role-based-access: backlog
+  1-7-web-app-shell-login-and-register: backlog
+  1-8-browse-and-filter-products: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-event-envelope-and-transactional-outbox-relay: backlog
+  2-2-idempotent-inbox-consumers: backlog
+  2-3-checkout-creates-one-order-per-seller: backlog
+  2-4-customer-sees-own-orders-and-status-timeline: backlog
+  2-5-select-products-and-check-out-in-the-web-app: backlog
+  2-6-admin-manages-vouchers-and-the-card-decline-rate: backlog
+  2-7-request-payment-for-an-order: backlog
+  2-8-authorize-payment-and-approve-the-order: backlog
+  2-9-compensation-when-payment-fails: backlog
+  2-10-pay-form-and-payment-states-in-the-web-app: backlog
+  2-11-prove-no-lost-orders-when-payment-service-is-down: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-seller-lists-own-orders-by-status: backlog
+  3-2-seller-marks-an-order-shipped: backlog
+  3-3-simulated-delivery: backlog
+  3-4-delivery-survives-a-crash-and-one-trace-spans-four-services: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-replayer-streams-historical-order-status-events: backlog
+  4-2-order-service-ingests-historical-orders: backlog
+  4-3-seeded-users-see-their-real-history-and-replay-restarts-safe: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-analytics-service-builds-the-order-projection-from-events: backlog
+  5-2-seller-sees-seller-revenue-for-a-date-range: backlog
+  5-3-admin-ops-dashboard-with-live-auto-refresh: backlog
+  5-4-prove-the-dashboard-stays-within-5-seconds-during-replay: backlog
+  5-5-kubernetes-manifests: backlog
+  epic-5-retrospective: optional

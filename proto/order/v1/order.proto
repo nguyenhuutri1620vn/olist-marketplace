@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package order.v1;
 
-option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/order/v1;orderv1";
+option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/order/v1;orderv1";
 
+// OrderService is the gRPC contract of order-service. RPCs arrive with later stories.
 service OrderService {}

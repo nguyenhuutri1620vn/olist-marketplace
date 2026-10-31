@@ -1,0 +1,11 @@
+.git
+.github
+.claude
+_bmad
+_bmad-output
+bin
+data
+docs
+deployments
+web
+**/node_modules
