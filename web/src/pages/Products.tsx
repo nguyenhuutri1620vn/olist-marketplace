@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
 import { Money } from '@/components/Money'
+import { Pager } from '@/components/Pager'
 import { TableSkeleton } from '@/components/TableSkeleton'
 import { toastRequestError } from '@/components/requestError'
-import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { apiFetch } from '@/lib/api'
+import { pageParam } from '@/lib/paging'
 
 // PAGE_SIZE is the Products table page (UX-DR8).
 const PAGE_SIZE = 20
@@ -34,13 +35,6 @@ type ProductPage = { products: ProductRow[]; total: number }
 // A result belongs to the query it answered; a result for another query
 // means the current one is still loading.
 type Result = { query: string; page: ProductPage | null }
-
-// pageParam reads ?page=, falling back to 1 for anything but a positive int32.
-function pageParam(raw: string | null): number {
-  if (!raw || !/^[1-9]\d{0,9}$/.test(raw)) return 1
-  const n = Number(raw)
-  return n <= 2 ** 31 - 1 ? n : 1
-}
 
 // sellerLabel tells Sellers apart without a name: the first 8 characters of
 // the id, as in the demo emails, and the location.
@@ -155,18 +149,7 @@ export function Products() {
           </TableBody>
         )}
       </Table>
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-sm text-muted-foreground">
-          Page {page}
-          {pages !== null && ` of ${pages}`}
-        </span>
-        <Button variant="outline" disabled={loading || page <= 1} onClick={() => go({ page: Math.min(page - 1, pages ?? page - 1) })}>
-          Previous
-        </Button>
-        <Button variant="outline" disabled={pages === null || page >= pages} onClick={() => go({ page: page + 1 })}>
-          Next
-        </Button>
-      </div>
+      <Pager page={page} pages={pages} loading={loading} onGo={(n) => go({ page: n })} />
     </div>
   )
 }

@@ -22,6 +22,8 @@ type Catalog interface {
 type Store interface {
 	FindCheckout(ctx context.Context, customerID, key string) (domain.Placed, bool, error)
 	CreateCheckout(ctx context.Context, co domain.Checkout, checkoutID string, orders []domain.Order) error
+	ListOrders(ctx context.Context, customerID string, p domain.Page) (domain.SummaryPage, error)
+	GetOrder(ctx context.Context, customerID, orderID string) (domain.Detail, error)
 }
 
 // Orders holds the Order use cases.
@@ -81,4 +83,15 @@ func (s *Orders) existing(ctx context.Context, co domain.Checkout) (domain.Place
 		return domain.Placed{}, true, domain.ErrKeyReused
 	}
 	return placed, true, nil
+}
+
+// MyOrders lists the Customer's Orders newest first (FR7).
+func (s *Orders) MyOrders(ctx context.Context, customerID string, p domain.Page) (domain.SummaryPage, error) {
+	return s.store.ListOrders(ctx, customerID, p)
+}
+
+// Order returns one of the Customer's Orders; any other id is
+// domain.ErrNotFound.
+func (s *Orders) Order(ctx context.Context, customerID, orderID string) (domain.Detail, error) {
+	return s.store.GetOrder(ctx, customerID, orderID)
 }

@@ -20,7 +20,8 @@ import (
 
 // groupPaths has one request path per role's route group.
 var groupPaths = map[auth.Role][]string{
-	auth.RoleCustomer: {"/api/checkout", "/api/orders", "/api/orders/42", "/api/vouchers/WELCOME10"},
+	// GET /api/orders and /api/orders/{id} are real routes now (TestOrderReadsAreCustomerOnly).
+	auth.RoleCustomer: {"/api/checkout", "/api/vouchers/WELCOME10"},
 	auth.RoleSeller:   {"/api/seller/orders", "/api/seller/revenue"},
 	auth.RoleAdmin:    {"/api/admin/vouchers", "/api/admin/dashboard"},
 }
@@ -201,6 +202,50 @@ func TestCheckoutIsCustomerOnly(t *testing.T) {
 	for role, want := range map[auth.Role]int{auth.RoleCustomer: 200, auth.RoleSeller: 403, auth.RoleAdmin: 403} {
 		if got := post("Bearer " + iss.Token(t, "acc", role)); got != want {
 			t.Errorf("%s → %d, want %d", role, got, want)
+		}
+	}
+}
+
+func (okOrders) ListMyOrders(context.Context, *orderv1.ListMyOrdersRequest, ...grpc.CallOption) (*orderv1.ListMyOrdersResponse, error) {
+	return &orderv1.ListMyOrdersResponse{}, nil
+}
+
+func (okOrders) GetOrder(context.Context, *orderv1.GetOrderRequest, ...grpc.CallOption) (*orderv1.GetOrderResponse, error) {
+	return &orderv1.GetOrderResponse{Order: &orderv1.OrderDetail{OrderId: "o"}}, nil
+}
+
+// Only Customers read Orders through the gateway.
+func TestOrderReadsAreCustomerOnly(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	h := routing.New(routing.Deps{Verifier: iss.Verifier(), Orders: okOrders{}})
+	for _, p := range []string{"/api/orders", "/api/orders/0192f000-0000-7000-8000-0000000000aa"} {
+		if rec := do(h, p, ""); rec.Code != http.StatusUnauthorized {
+			t.Errorf("%s no token → %d", p, rec.Code)
+		}
+		for role, want := range map[auth.Role]int{auth.RoleCustomer: 200, auth.RoleSeller: 403, auth.RoleAdmin: 403} {
+			if rec := do(h, p, "Bearer "+iss.Token(t, "acc", role)); rec.Code != want {
+				t.Errorf("%s as %s → %d, want %d", p, role, rec.Code, want)
+			}
+		}
+	}
+}
+
+// Other methods on /api/orders stay gated: wrong role 403, Customer the
+// JSON 404 of a route that does not exist yet.
+func TestOtherOrderMethodsStayGated(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	h := routing.New(routing.Deps{Verifier: iss.Verifier(), Orders: okOrders{}})
+	for _, tc := range []struct {
+		method, path string
+	}{{http.MethodPost, "/api/orders"}, {http.MethodDelete, "/api/orders/0192f000-0000-7000-8000-0000000000aa"}} {
+		for role, want := range map[auth.Role]int{auth.RoleCustomer: 404, auth.RoleSeller: 403} {
+			req := httptest.NewRequest(tc.method, tc.path, nil)
+			req.Header.Set("Authorization", "Bearer "+iss.Token(t, "acc", role))
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != want {
+				t.Errorf("%s %s as %s → %d, want %d", tc.method, tc.path, role, rec.Code, want)
+			}
 		}
 	}
 }

@@ -5,6 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+    /* Order Status badge colours (DESIGN.md), the only added colours. */
+    --color-status-created: #64748B;
+    --color-status-approved: #2563EB;
+    --color-status-processing: #D97706;
+    --color-status-shipped: #7C3AED;
+    --color-status-delivered: #16A34A;
+    --color-status-canceled: #DC2626;
     --font-heading: var(--font-sans);
     --font-sans: ui-sans-serif, system-ui, sans-serif; /* DESIGN.md: system stack, no custom font */
     --color-sidebar-ring: var(--sidebar-ring);

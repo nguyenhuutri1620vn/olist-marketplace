@@ -57,6 +57,19 @@ func (f *fakeStore) CreateCheckout(_ context.Context, co domain.Checkout, checko
 	return nil
 }
 
+func (f *fakeStore) ListOrders(context.Context, string, domain.Page) (domain.SummaryPage, error) {
+	return domain.SummaryPage{}, nil
+}
+func (f *fakeStore) GetOrder(context.Context, string, string) (domain.Detail, error) {
+	return domain.Detail{}, domain.ErrNotFound
+}
+func (vanishingStore) ListOrders(context.Context, string, domain.Page) (domain.SummaryPage, error) {
+	return domain.SummaryPage{}, nil
+}
+func (vanishingStore) GetOrder(context.Context, string, string) (domain.Detail, error) {
+	return domain.Detail{}, domain.ErrNotFound
+}
+
 func items() []domain.Item {
 	return []domain.Item{
 		{ProductID: p1, SellerID: sellerB, SellerState: "RJ", CategoryEN: "health_beauty", Price: 5890, Freight: 1329},

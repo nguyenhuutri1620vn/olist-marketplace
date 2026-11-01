@@ -180,3 +180,72 @@ type Placed struct {
 	Hash       string
 	Orders     []Order
 }
+
+// ErrNotFound marks an Order the caller may not see: unknown, or another
+// Customer's (the same answer, so ids cannot be probed).
+var ErrNotFound = errors.New("order not found")
+
+// MaxPageSize bounds a page of Orders (as Story 1.8 bounds Products).
+const MaxPageSize = 100
+
+// Page selects one page of a list.
+type Page struct {
+	Number int32 // 1-based
+	Size   int32
+}
+
+// NewPage validates the bounds: page ≥ 1, size 1..MaxPageSize.
+func NewPage(number, size int32) (Page, error) {
+	if number < 1 {
+		return Page{}, invalid("page %d is below 1", number)
+	}
+	if size < 1 || size > MaxPageSize {
+		return Page{}, invalid("page_size %d is outside 1..%d", size, MaxPageSize)
+	}
+	return Page{Number: number, Size: size}, nil
+}
+
+// Limit is the page size.
+func (p Page) Limit() int64 { return int64(p.Size) }
+
+// Offset is the number of rows before the page.
+func (p Page) Offset() int64 { return int64(p.Number-1) * int64(p.Size) }
+
+// ParseOrderID returns the canonical form of an Order id.
+func ParseOrderID(id string) (string, error) {
+	u, err := uuid.Parse(id)
+	if err != nil {
+		return "", invalid("order id %q is not a uuid", id)
+	}
+	return u.String(), nil
+}
+
+// Summary is one row of a Customer's Order list.
+type Summary struct {
+	ID          string
+	SellerID    string
+	Status      string
+	PurchasedAt time.Time
+	Total       int64
+	ItemCount   int
+}
+
+// SummaryPage is one page of Orders and the count across all pages.
+type SummaryPage struct {
+	Orders []Summary
+	Total  int64
+}
+
+// StatusChange is one timeline entry.
+type StatusChange struct {
+	Status string
+	At     time.Time
+}
+
+// Detail is an Order with its timeline, oldest first.
+type Detail struct {
+	Order
+	Timeline        []StatusChange
+	CancelReason    string
+	VoucherRestored bool
+}

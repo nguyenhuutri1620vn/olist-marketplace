@@ -4,6 +4,8 @@ package order.v1;
 
 option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/order/v1;orderv1";
 
+import "google/protobuf/timestamp.proto";
+
 // OrderService is the gRPC contract of order-service, the only writer of
 // Orders (AD-5).
 service OrderService {
@@ -11,6 +13,12 @@ service OrderService {
   // (FR1). Customer only. A repeated key with the same Products returns the
   // original Orders; with other Products it is ALREADY_EXISTS.
   rpc Checkout(CheckoutRequest) returns (CheckoutResponse);
+  // ListMyOrders lists the caller's Orders newest first
+  // (purchased_at DESC, id DESC). Customer only.
+  rpc ListMyOrders(ListMyOrdersRequest) returns (ListMyOrdersResponse);
+  // GetOrder returns one of the caller's Orders; any other id is NOT_FOUND.
+  // Customer only.
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
 }
 
 message CheckoutRequest {
@@ -42,4 +50,54 @@ message OrderItem {
   string category_name_en = 2;
   int64 price_centavos = 3;
   int64 freight_centavos = 4;
+}
+
+message ListMyOrdersRequest {
+  // 1-based.
+  int32 page = 1;
+  // 1 to 100.
+  int32 page_size = 2;
+}
+
+message ListMyOrdersResponse {
+  repeated OrderSummary orders = 1;
+  // The caller's Orders across all pages.
+  int64 total = 2;
+}
+
+message OrderSummary {
+  string order_id = 1;
+  google.protobuf.Timestamp purchased_at = 2;
+  string status = 3;
+  int64 total_centavos = 4;
+  string seller_id = 5;
+  int32 item_count = 6;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message GetOrderResponse {
+  OrderDetail order = 1;
+}
+
+message OrderDetail {
+  string order_id = 1;
+  google.protobuf.Timestamp purchased_at = 2;
+  string status = 3;
+  int64 total_centavos = 4;
+  string seller_id = 5;
+  int64 voucher_amount_centavos = 6;
+  repeated OrderItem items = 7;
+  // Oldest first.
+  repeated StatusChange timeline = 8;
+  // Set only when status is canceled.
+  string cancel_reason = 9;
+  bool voucher_restored = 10;
+}
+
+message StatusChange {
+  string status = 1;
+  google.protobuf.Timestamp at = 2;
 }

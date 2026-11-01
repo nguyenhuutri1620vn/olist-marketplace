@@ -5,7 +5,9 @@ import { Layout } from '@/components/Layout'
 import { RequireRole } from '@/components/RequireRole'
 import { Toaster } from '@/components/ui/sonner'
 import { Login } from '@/pages/Login'
+import { MyOrders } from '@/pages/MyOrders'
 import { NotFound } from '@/pages/NotFound'
+import { OrderDetail } from '@/pages/OrderDetail'
 import { Placeholder } from '@/pages/Placeholder'
 import { Products } from '@/pages/Products'
 import { Register } from '@/pages/Register'
@@ -32,8 +34,8 @@ export function AppRoutes() {
         <Route path="register" element={<Register />} />
         <Route element={<RequireRole role="customer" />}>
           <Route path="checkout" element={<Placeholder title="Checkout" />} />
-          <Route path="orders" element={<Placeholder title="My Orders" />} />
-          <Route path="orders/:id" element={<Placeholder title="Order" />} />
+          <Route path="orders" element={<MyOrders />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
         </Route>
         <Route element={<RequireRole role="seller" />}>
           <Route path="seller/orders" element={<Placeholder title="Seller Orders" />} />

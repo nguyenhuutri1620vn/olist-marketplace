@@ -20,11 +20,16 @@ func TestOrderServiceRunsTheOutboxRelay(t *testing.T) {
 	}
 }
 
-func TestOnlyCustomersCheckOut(t *testing.T) {
+func TestOnlyCustomersCheckOutAndReadTheirOrders(t *testing.T) {
 	p := orderService().Policy
-	m := orderv1.OrderService_Checkout_FullMethodName
-	if p.IsPublic(m) || !slices.Equal(p.Roles[m], []auth.Role{auth.RoleCustomer}) {
-		t.Errorf("Checkout policy: public %v, roles %v", p.IsPublic(m), p.Roles[m])
+	for _, m := range []string{
+		orderv1.OrderService_Checkout_FullMethodName,
+		orderv1.OrderService_ListMyOrders_FullMethodName,
+		orderv1.OrderService_GetOrder_FullMethodName,
+	} {
+		if p.IsPublic(m) || !slices.Equal(p.Roles[m], []auth.Role{auth.RoleCustomer}) {
+			t.Errorf("%s policy: public %v, roles %v", m, p.IsPublic(m), p.Roles[m])
+		}
 	}
 }
 

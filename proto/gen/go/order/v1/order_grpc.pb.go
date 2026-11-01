@@ -19,7 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_Checkout_FullMethodName = "/order.v1.OrderService/Checkout"
+	OrderService_Checkout_FullMethodName     = "/order.v1.OrderService/Checkout"
+	OrderService_ListMyOrders_FullMethodName = "/order.v1.OrderService/ListMyOrders"
+	OrderService_GetOrder_FullMethodName     = "/order.v1.OrderService/GetOrder"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -33,6 +35,12 @@ type OrderServiceClient interface {
 	// (FR1). Customer only. A repeated key with the same Products returns the
 	// original Orders; with other Products it is ALREADY_EXISTS.
 	Checkout(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error)
+	// ListMyOrders lists the caller's Orders newest first
+	// (purchased_at DESC, id DESC). Customer only.
+	ListMyOrders(ctx context.Context, in *ListMyOrdersRequest, opts ...grpc.CallOption) (*ListMyOrdersResponse, error)
+	// GetOrder returns one of the caller's Orders; any other id is NOT_FOUND.
+	// Customer only.
+	GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error)
 }
 
 type orderServiceClient struct {
@@ -53,6 +61,26 @@ func (c *orderServiceClient) Checkout(ctx context.Context, in *CheckoutRequest, 
 	return out, nil
 }
 
+func (c *orderServiceClient) ListMyOrders(ctx context.Context, in *ListMyOrdersRequest, opts ...grpc.CallOption) (*ListMyOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMyOrdersResponse)
+	err := c.cc.Invoke(ctx, OrderService_ListMyOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) GetOrder(ctx context.Context, in *GetOrderRequest, opts ...grpc.CallOption) (*GetOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetOrderResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -64,6 +92,12 @@ type OrderServiceServer interface {
 	// (FR1). Customer only. A repeated key with the same Products returns the
 	// original Orders; with other Products it is ALREADY_EXISTS.
 	Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
+	// ListMyOrders lists the caller's Orders newest first
+	// (purchased_at DESC, id DESC). Customer only.
+	ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersResponse, error)
+	// GetOrder returns one of the caller's Orders; any other id is NOT_FOUND.
+	// Customer only.
+	GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -76,6 +110,12 @@ type UnimplementedOrderServiceServer struct{}
 
 func (UnimplementedOrderServiceServer) Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Checkout not implemented")
+}
+func (UnimplementedOrderServiceServer) ListMyOrders(context.Context, *ListMyOrdersRequest) (*ListMyOrdersResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMyOrders not implemented")
+}
+func (UnimplementedOrderServiceServer) GetOrder(context.Context, *GetOrderRequest) (*GetOrderResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -116,6 +156,42 @@ func _OrderService_Checkout_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_ListMyOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMyOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).ListMyOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_ListMyOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).ListMyOrders(ctx, req.(*ListMyOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_GetOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetOrder(ctx, req.(*GetOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -126,6 +202,14 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Checkout",
 			Handler:    _OrderService_Checkout_Handler,
+		},
+		{
+			MethodName: "ListMyOrders",
+			Handler:    _OrderService_ListMyOrders_Handler,
+		},
+		{
+			MethodName: "GetOrder",
+			Handler:    _OrderService_GetOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

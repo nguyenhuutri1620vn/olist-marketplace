@@ -25,6 +25,9 @@ const (
 	RedriveGroup      = "dlq-redrive"
 )
 
+// dlqRetry is how soon WatchDLQDepth retries a failed poll.
+const dlqRetry = time.Second
+
 // redrivePoll bounds one wait for DLQ records; the caller's ctx bounds the
 // whole redrive.
 const redrivePoll = 10 * time.Second
@@ -128,8 +131,6 @@ func WatchDLQDepth(ctx context.Context, brokers, topics []string, m *Metrics, lo
 	for i, t := range topics {
 		dlqs[i] = t + DLQSuffix
 	}
-	t := time.NewTicker(every)
-	defer t.Stop()
 	for {
 		d, err := depths(ctx, adm, dlqs...)
 		if err != nil && ctx.Err() == nil {
@@ -141,10 +142,14 @@ func WatchDLQDepth(ctx context.Context, brokers, topics []string, m *Metrics, lo
 				m.dlqDepth.WithLabelValues(topic).Set(float64(v))
 			}
 		}
-		select {
-		case <-ctx.Done():
+		// A failed poll (a broker still electing its group coordinator, say)
+		// is retried soon, so the gauge is not missing for a whole interval.
+		wait := every
+		if err != nil {
+			wait = min(every, dlqRetry)
+		}
+		if !sleep(ctx, wait) {
 			return
-		case <-t.C:
 		}
 	}
 }

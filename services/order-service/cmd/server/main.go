@@ -38,7 +38,9 @@ func orderService() app.Service {
 		UsesKafka:  true,
 		Outbox:     true,
 		Policy: auth.Policy{Roles: map[string][]auth.Role{
-			orderv1.OrderService_Checkout_FullMethodName: {auth.RoleCustomer},
+			orderv1.OrderService_Checkout_FullMethodName:     {auth.RoleCustomer},
+			orderv1.OrderService_ListMyOrders_FullMethodName: {auth.RoleCustomer},
+			orderv1.OrderService_GetOrder_FullMethodName:     {auth.RoleCustomer},
 		}},
 		Init: func(_ context.Context, pool *pgxpool.Pool) error {
 			timeout, err := catalog.Timeout()

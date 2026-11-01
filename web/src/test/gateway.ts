@@ -28,6 +28,56 @@ export type FakeProduct = {
   price_centavos: number
 }
 
+export type FakeOrder = {
+  owner: string
+  order_id: string
+  purchased_at: string
+  status: string
+  seller_id: string
+  voucher_amount_centavos: number
+  items: { product_id: string; category_name_en: string; price_centavos: number; freight_centavos: number }[]
+  timeline: { status: string; at: string }[]
+  cancel_reason: string
+  voucher_restored: boolean
+}
+
+// fakeOrders are 25 Orders of the demo Customer (account "customer-id"),
+// newest first, one hour apart.
+export function fakeOrders(): FakeOrder[] {
+  const out: FakeOrder[] = []
+  for (let i = 0; i < 25; i++) {
+    const at = new Date(Date.UTC(2026, 10, 1, 12 - i, 0, 0)).toISOString().replace('.000', '')
+    out.push({
+      owner: 'customer-id',
+      order_id: `0192f000-0000-7000-8000-${String(100 - i).padStart(12, '0')}`,
+      purchased_at: at,
+      status: 'created',
+      seller_id: '6560211a19b47992c3666cc44a7e94c0',
+      voucher_amount_centavos: 0,
+      items: [
+        { product_id: 'aaaa1111' + 'f'.repeat(24), category_name_en: 'health_beauty', price_centavos: 5890, freight_centavos: 1329 },
+        { product_id: 'bbbb2222' + 'f'.repeat(24), category_name_en: 'Uncategorized', price_centavos: 760, freight_centavos: 0 },
+      ],
+      timeline: [{ status: 'created', at }],
+      cancel_reason: '',
+      voucher_restored: false,
+    })
+  }
+  return out
+}
+
+function total(o: FakeOrder): number {
+  return o.items.reduce((s, it) => s + it.price_centavos + it.freight_centavos, 0)
+}
+
+// callerOf reads the account id from a fake Bearer JWT.
+function callerOf(init?: RequestInit): string | null {
+  const auth = new Headers(init?.headers).get('Authorization')
+  if (!auth) return null
+  const payload = auth.replace(/^Bearer /, '').split('.')[1]
+  return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).sub
+}
+
 export const categories = [
   { name_pt: 'beleza_saude', name_en: 'health_beauty' },
   { name_pt: 'pc_gamer', name_en: 'pc_gamer' },
@@ -63,10 +113,32 @@ export function fakeCatalog(): FakeProduct[] {
 export function fakeGateway() {
   const calls: { url: string; init?: RequestInit }[] = []
   const registered = new Set<string>()
-  const state = { products: fakeCatalog(), fail: [] as string[] }
+  const state = { products: fakeCatalog(), orders: fakeOrders(), fail: [] as string[] }
   const fetch = async (url: string, init?: RequestInit): Promise<Response> => {
     calls.push({ url, init })
     const u = new URL(url, 'http://web')
+    if (u.pathname === '/api/orders' || u.pathname.startsWith('/api/orders/')) {
+      if (state.fail.includes('/api/orders')) return json(503, { error: { code: 'UNAVAILABLE', message: 'Service Unavailable' } })
+      const caller = callerOf(init)
+      if (!caller) return json(401, { error: { code: 'UNAUTHENTICATED', message: 'missing bearer token' } })
+      const mine = state.orders.filter((o) => o.owner === caller)
+      if (u.pathname === '/api/orders') {
+        const page = Number(u.searchParams.get('page') ?? '1')
+        const size = Number(u.searchParams.get('page_size') ?? '20')
+        const rows = mine.slice((page - 1) * size, page * size).map((o) => ({
+          order_id: o.order_id, purchased_at: o.purchased_at, status: o.status, total_centavos: total(o),
+          seller_id: o.seller_id, item_count: o.items.length,
+        }))
+        return json(200, { orders: rows, total: mine.length, page, page_size: size })
+      }
+      const id = u.pathname.slice('/api/orders/'.length)
+      if (!/^[0-9a-f-]{36}$/i.test(id)) return json(400, { error: { code: 'INVALID_ARGUMENT', message: `order id "${id}" is not a uuid` } })
+      const o = mine.find((x) => x.order_id === id.toLowerCase())
+      if (!o) return json(404, { error: { code: 'NOT_FOUND', message: 'order not found' } })
+      const { owner, ...detail } = o
+      void owner
+      return json(200, { ...detail, total_centavos: total(o) })
+    }
     if (u.pathname === '/api/categories' || u.pathname === '/api/products') {
       if (state.fail.includes(u.pathname)) return json(503, { error: { code: 'UNAVAILABLE', message: 'Service Unavailable' } })
       if (u.pathname === '/api/categories') return json(200, { categories })

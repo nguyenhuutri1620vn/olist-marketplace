@@ -13,12 +13,18 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/handler"
 )
 
+// Orders is the part of OrderService the gateway calls.
+type Orders interface {
+	handler.Checkouter
+	handler.OrderReader
+}
+
 // Deps are what the routes call.
 type Deps struct {
 	Verifier *auth.Verifier
 	Identity identityv1.IdentityServiceClient
 	Catalog  handler.CatalogBrowser
-	Orders   handler.Checkouter
+	Orders   Orders
 	// Upstreams are traced gRPC connections by service name (debug routes).
 	Upstreams map[string]grpc.ClientConnInterface
 }
@@ -42,7 +48,10 @@ func New(d Deps) http.Handler {
 	})
 	// Anything unmatched still gets the error body.
 	mux.Handle("/", notYet)
-	mux.Handle("POST /api/checkout", RequireRole(d.Verifier, auth.RoleCustomer)(handler.Checkout(d.Orders)))
+	customer := RequireRole(d.Verifier, auth.RoleCustomer)
+	mux.Handle("POST /api/checkout", customer(handler.Checkout(d.Orders)))
+	mux.Handle("GET /api/orders", customer(handler.ListOrders(d.Orders)))
+	mux.Handle("GET /api/orders/{id}", customer(handler.GetOrder(d.Orders)))
 	for role, patterns := range groups {
 		for _, p := range patterns {
 			mux.Handle(p, RequireRole(d.Verifier, role)(notYet))

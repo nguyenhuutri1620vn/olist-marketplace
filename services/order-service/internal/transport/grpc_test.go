@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	orderv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/order/v1"
@@ -27,11 +28,26 @@ const (
 	sellerA  = "3442f8959a84dea7ee197c632cb2df15"
 )
 
-// fakeOrders records the Checkout it got and answers with placed or err.
+// fakeOrders records what it got and answers with its fields or err.
 type fakeOrders struct {
-	got    *domain.Checkout
-	placed domain.Placed
-	err    error
+	got      *domain.Checkout
+	placed   domain.Placed
+	list     domain.SummaryPage
+	detail   domain.Detail
+	customer string
+	page     *domain.Page
+	orderID  string
+	err      error
+}
+
+func (f *fakeOrders) MyOrders(_ context.Context, customerID string, p domain.Page) (domain.SummaryPage, error) {
+	f.customer, f.page = customerID, &p
+	return f.list, f.err
+}
+
+func (f *fakeOrders) Order(_ context.Context, customerID, orderID string) (domain.Detail, error) {
+	f.customer, f.orderID = customerID, orderID
+	return f.detail, f.err
 }
 
 func (f *fakeOrders) Checkout(_ context.Context, co domain.Checkout) (domain.Placed, error) {
@@ -115,6 +131,72 @@ func TestCheckoutValidatesBeforeTheUseCase(t *testing.T) {
 func TestCheckoutWithoutACallerIsUnauthenticated(t *testing.T) {
 	_, err := client(t, &fakeOrders{}, nil).Checkout(context.Background(), &orderv1.CheckoutRequest{ProductIds: []string{p1}, CheckoutIdempotencyKey: "k"})
 	if status.Code(err) != codes.Unauthenticated {
+		t.Errorf("no caller: %v", err)
+	}
+}
+
+var at = time.Date(2026, 11, 1, 10, 0, 0, 0, time.UTC)
+
+func TestListMyOrdersMapsThePage(t *testing.T) {
+	f := &fakeOrders{list: domain.SummaryPage{Total: 41, Orders: []domain.Summary{{
+		ID: "o-1", SellerID: sellerA, Status: "created", PurchasedAt: at, Total: 7219, ItemCount: 2,
+	}}}}
+	resp, err := client(t, f, caller).ListMyOrders(context.Background(), &orderv1.ListMyOrdersRequest{Page: 2, PageSize: 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.customer != customer || f.page == nil || *f.page != (domain.Page{Number: 2, Size: 20}) {
+		t.Errorf("use case got %s %+v", f.customer, f.page)
+	}
+	want := &orderv1.ListMyOrdersResponse{Total: 41, Orders: []*orderv1.OrderSummary{{
+		OrderId: "o-1", SellerId: sellerA, Status: "created", PurchasedAt: timestamppb.New(at), TotalCentavos: 7219, ItemCount: 2,
+	}}}
+	if !proto.Equal(resp, want) {
+		t.Errorf("ListMyOrders = %v\nwant %v", resp, want)
+	}
+	for _, req := range []*orderv1.ListMyOrdersRequest{{Page: 0, PageSize: 20}, {Page: 1, PageSize: 101}} {
+		f := &fakeOrders{}
+		if _, err := client(t, f, caller).ListMyOrders(context.Background(), req); status.Code(err) != codes.InvalidArgument || f.page != nil {
+			t.Errorf("%v: %v (use case called %v)", req, err, f.page != nil)
+		}
+	}
+}
+
+func TestGetOrderMapsTheDetail(t *testing.T) {
+	f := &fakeOrders{detail: domain.Detail{
+		Order: domain.Order{ID: "0192f000-0000-7000-8000-0000000000aa", SellerID: sellerA, Status: "canceled", PurchasedAt: at, VoucherAmount: 500,
+			Items: []domain.Item{{ProductID: p1, SellerID: sellerA, CategoryEN: "health_beauty", Price: 5890, Freight: 1329}}},
+		Timeline:     []domain.StatusChange{{Status: "created", At: at}, {Status: "canceled", At: at.Add(time.Minute)}},
+		CancelReason: "CARD_DECLINED", VoucherRestored: true,
+	}}
+	resp, err := client(t, f, caller).GetOrder(context.Background(), &orderv1.GetOrderRequest{OrderId: "0192F000-0000-7000-8000-0000000000AA"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.customer != customer || f.orderID != "0192f000-0000-7000-8000-0000000000aa" {
+		t.Errorf("use case got %s %s", f.customer, f.orderID)
+	}
+	want := &orderv1.GetOrderResponse{Order: &orderv1.OrderDetail{
+		OrderId: "0192f000-0000-7000-8000-0000000000aa", SellerId: sellerA, Status: "canceled", PurchasedAt: timestamppb.New(at),
+		TotalCentavos: 7219, VoucherAmountCentavos: 500,
+		Items:        []*orderv1.OrderItem{{ProductId: p1, CategoryNameEn: "health_beauty", PriceCentavos: 5890, FreightCentavos: 1329}},
+		Timeline:     []*orderv1.StatusChange{{Status: "created", At: timestamppb.New(at)}, {Status: "canceled", At: timestamppb.New(at.Add(time.Minute))}},
+		CancelReason: "CARD_DECLINED", VoucherRestored: true,
+	}}
+	if !proto.Equal(resp, want) {
+		t.Errorf("GetOrder = %v\nwant %v", resp, want)
+	}
+}
+
+func TestGetOrderErrors(t *testing.T) {
+	if _, err := client(t, &fakeOrders{}, caller).GetOrder(context.Background(), &orderv1.GetOrderRequest{OrderId: "abc"}); status.Code(err) != codes.InvalidArgument {
+		t.Errorf("abc: %v", err)
+	}
+	f := &fakeOrders{err: domain.ErrNotFound}
+	if _, err := client(t, f, caller).GetOrder(context.Background(), &orderv1.GetOrderRequest{OrderId: "0192f000-0000-7000-8000-0000000000aa"}); status.Code(err) != codes.NotFound {
+		t.Errorf("not found: %v", err)
+	}
+	if _, err := client(t, &fakeOrders{}, nil).ListMyOrders(context.Background(), &orderv1.ListMyOrdersRequest{Page: 1, PageSize: 1}); status.Code(err) != codes.Unauthenticated {
 		t.Errorf("no caller: %v", err)
 	}
 }

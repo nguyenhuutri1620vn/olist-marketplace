@@ -45,3 +45,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-2-idempotent-inbox-consumers.md`
   summary: Make DLQ redrive progress survive the dlq-redrive group's offset expiry (offsets.retention.minutes, 7 days by default).
   evidence: Depth uses the group's committed offsets; if they expire, every retained DLQ record counts as pending again and a redrive copies them all a second time (harmless for idempotent consumers, but dlq-check fails).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-4-customer-sees-own-orders-and-status-timeline.md`
+  summary: Test WatchDLQDepth's 1 s retry after a failed poll (needs a fault-injection seam for depths or the sleep).
+  evidence: The retry fixed a real 15 s gap (seen as a flaky pkg/app test on a fresh broker) but only the healthy path is covered by tests.
