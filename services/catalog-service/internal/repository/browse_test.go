@@ -81,6 +81,9 @@ func TestListProductsSortsByDisplayNameThenID(t *testing.T) {
 		first.Seller != (domain.Seller{ID: seller2, City: "rio de janeiro", State: "RJ"}) || first.Price != 100 {
 		t.Errorf("first row = %+v", first)
 	}
+	if second := p.Products[1]; second.Price != 200 || second.Freight != 37 {
+		t.Errorf("second row price %d freight %d, want 200 and 37", second.Price, second.Freight)
+	}
 }
 
 func TestListProductsPagesNeverOverlap(t *testing.T) {

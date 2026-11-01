@@ -83,6 +83,7 @@ func TestListProductsMapsQueryAndPage(t *testing.T) {
 		Category: domain.Category{NamePT: "beleza_saude", NameEN: "health_beauty"},
 		Seller:   domain.Seller{ID: sellerID, City: "campinas", State: "SP"},
 		Price:    5890,
+		Freight:  1329,
 	}}}}
 	c := catalogClient(t, repo)
 	resp, err := c.ListProducts(context.Background(), &catalogv1.ListProductsRequest{Category: "beleza_saude", Page: 3, PageSize: 20})
@@ -96,7 +97,7 @@ func TestListProductsMapsQueryAndPage(t *testing.T) {
 		ProductId: productID, DisplayName: "health_beauty #1e9e",
 		CategoryNamePt: "beleza_saude", CategoryNameEn: "health_beauty",
 		SellerId: sellerID, SellerCity: "campinas", SellerState: "SP",
-		PriceCentavos: 5890,
+		PriceCentavos: 5890, FreightCentavos: 1329,
 	}}}
 	if !proto.Equal(resp, want) {
 		t.Errorf("ListProducts = %v, want %v", resp, want)

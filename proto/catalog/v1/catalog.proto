@@ -53,6 +53,7 @@ message ProductSummary {
   string seller_city = 6;
   string seller_state = 7;
   int64 price_centavos = 8;
+  int64 freight_centavos = 9;
 }
 
 message GetProductsRequest {

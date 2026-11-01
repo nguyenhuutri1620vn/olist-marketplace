@@ -280,12 +280,13 @@ type ProductSummary struct {
 	CategoryNamePt string `protobuf:"bytes,3,opt,name=category_name_pt,json=categoryNamePt,proto3" json:"category_name_pt,omitempty"`
 	CategoryNameEn string `protobuf:"bytes,4,opt,name=category_name_en,json=categoryNameEn,proto3" json:"category_name_en,omitempty"`
 	// 32 hex digits, as in the dataset.
-	SellerId      string `protobuf:"bytes,5,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
-	SellerCity    string `protobuf:"bytes,6,opt,name=seller_city,json=sellerCity,proto3" json:"seller_city,omitempty"`
-	SellerState   string `protobuf:"bytes,7,opt,name=seller_state,json=sellerState,proto3" json:"seller_state,omitempty"`
-	PriceCentavos int64  `protobuf:"varint,8,opt,name=price_centavos,json=priceCentavos,proto3" json:"price_centavos,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	SellerId        string `protobuf:"bytes,5,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
+	SellerCity      string `protobuf:"bytes,6,opt,name=seller_city,json=sellerCity,proto3" json:"seller_city,omitempty"`
+	SellerState     string `protobuf:"bytes,7,opt,name=seller_state,json=sellerState,proto3" json:"seller_state,omitempty"`
+	PriceCentavos   int64  `protobuf:"varint,8,opt,name=price_centavos,json=priceCentavos,proto3" json:"price_centavos,omitempty"`
+	FreightCentavos int64  `protobuf:"varint,9,opt,name=freight_centavos,json=freightCentavos,proto3" json:"freight_centavos,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ProductSummary) Reset() {
@@ -370,6 +371,13 @@ func (x *ProductSummary) GetSellerState() string {
 func (x *ProductSummary) GetPriceCentavos() int64 {
 	if x != nil {
 		return x.PriceCentavos
+	}
+	return 0
+}
+
+func (x *ProductSummary) GetFreightCentavos() int64 {
+	if x != nil {
+		return x.FreightCentavos
 	}
 	return 0
 }
@@ -571,7 +579,7 @@ const file_catalog_v1_catalog_proto_rawDesc = "" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"d\n" +
 	"\x14ListProductsResponse\x126\n" +
 	"\bproducts\x18\x01 \x03(\v2\x1a.catalog.v1.ProductSummaryR\bproducts\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x03R\x05total\"\xae\x02\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"\xd9\x02\n" +
 	"\x0eProductSummary\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12!\n" +
@@ -582,7 +590,8 @@ const file_catalog_v1_catalog_proto_rawDesc = "" +
 	"\vseller_city\x18\x06 \x01(\tR\n" +
 	"sellerCity\x12!\n" +
 	"\fseller_state\x18\a \x01(\tR\vsellerState\x12%\n" +
-	"\x0eprice_centavos\x18\b \x01(\x03R\rpriceCentavos\"5\n" +
+	"\x0eprice_centavos\x18\b \x01(\x03R\rpriceCentavos\x12)\n" +
+	"\x10freight_centavos\x18\t \x01(\x03R\x0ffreightCentavos\"5\n" +
 	"\x12GetProductsRequest\x12\x1f\n" +
 	"\vproduct_ids\x18\x01 \x03(\tR\n" +
 	"productIds\"N\n" +

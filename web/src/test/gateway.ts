@@ -26,6 +26,7 @@ export type FakeProduct = {
   seller_city: string
   seller_state: string
   price_centavos: number
+  freight_centavos: number
 }
 
 export type FakeOrder = {
@@ -91,10 +92,12 @@ function fakeProduct(i: number, cat: (typeof categories)[number]): FakeProduct {
     display_name: `${cat.name_en} #${id.slice(0, 4)}`,
     category_name_pt: cat.name_pt,
     category_name_en: cat.name_en,
-    seller_id: '6560211a19b47992c3666cc44a7e94c0',
-    seller_city: 'ibitinga',
+    // Uncategorized Products come from a second Seller.
+    seller_id: cat.name_pt === 'Uncategorized' ? '7c67e1448b00f6e969d365cea6b010ab' : '6560211a19b47992c3666cc44a7e94c0',
+    seller_city: cat.name_pt === 'Uncategorized' ? 'sao paulo' : 'ibitinga',
     seller_state: 'SP',
     price_centavos: 100000 + i,
+    freight_centavos: 1000,
   }
 }
 
@@ -113,10 +116,36 @@ export function fakeCatalog(): FakeProduct[] {
 export function fakeGateway() {
   const calls: { url: string; init?: RequestInit }[] = []
   const registered = new Set<string>()
-  const state = { products: fakeCatalog(), orders: fakeOrders(), fail: [] as string[] }
+  const state = { products: fakeCatalog(), orders: fakeOrders(), fail: [] as string[], checkouts: new Map<string, unknown>(), checkoutDelayMs: 0, nextOrder: 0 }
   const fetch = async (url: string, init?: RequestInit): Promise<Response> => {
     calls.push({ url, init })
     const u = new URL(url, 'http://web')
+    if (u.pathname === '/api/checkout' && init?.method === 'POST') {
+      if (state.checkoutDelayMs) await new Promise((r) => setTimeout(r, state.checkoutDelayMs))
+      if (state.fail.includes('/api/checkout#401')) return json(401, { error: { code: 'UNAUTHENTICATED', message: 'invalid or expired token' } })
+      if (state.fail.includes('/api/checkout')) return json(503, { error: { code: 'UNAVAILABLE', message: 'catalog unavailable; nothing was created' } })
+      const caller = callerOf(init)
+      if (!caller) return json(401, { error: { code: 'UNAUTHENTICATED', message: 'missing bearer token' } })
+      const { product_ids: ids, checkout_idempotency_key: key } = JSON.parse(String(init.body)) as { product_ids: string[]; checkout_idempotency_key: string }
+      const seen = state.checkouts.get(`${caller}/${key}`)
+      if (seen) return json(200, seen)
+      const bySeller = new Map<string, FakeProduct[]>()
+      for (const id of ids) {
+        const p = state.products.find((x) => x.product_id === id)
+        if (!p) return json(400, { error: { code: 'INVALID_ARGUMENT', message: `invalid: unknown product ids: ${id}` } })
+        bySeller.set(p.seller_id, [...(bySeller.get(p.seller_id) ?? []), p])
+      }
+      const now = new Date().toISOString()
+      const orders = [...bySeller.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([seller, items]) => {
+        const order_id = `0192f001-0000-7000-8000-${String(state.nextOrder++).padStart(12, '0')}`
+        const fakeItems = items.map((p) => ({ product_id: p.product_id, category_name_en: p.category_name_en, price_centavos: p.price_centavos, freight_centavos: p.freight_centavos }))
+        state.orders.unshift({ owner: caller, order_id, purchased_at: now, status: 'created', seller_id: seller, voucher_amount_centavos: 0, items: fakeItems, timeline: [{ status: 'created', at: now }], cancel_reason: '', voucher_restored: false })
+        return { order_id, seller_id: seller, status: 'created', total_centavos: fakeItems.reduce((t, x) => t + x.price_centavos + x.freight_centavos, 0), items: fakeItems }
+      })
+      const resp = { checkout_id: `checkout-${state.checkouts.size + 1}`, orders }
+      state.checkouts.set(`${caller}/${key}`, resp)
+      return json(200, resp)
+    }
     if (u.pathname === '/api/orders' || u.pathname.startsWith('/api/orders/')) {
       if (state.fail.includes('/api/orders')) return json(503, { error: { code: 'UNAVAILABLE', message: 'Service Unavailable' } })
       const caller = callerOf(init)

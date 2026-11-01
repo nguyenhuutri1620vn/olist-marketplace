@@ -59,7 +59,7 @@ func (r *Postgres) ListProducts(ctx context.Context, q domain.ProductQuery) (dom
 		}
 		rows, err := tx.Query(ctx, `
 			SELECT replace(p.id::text, '-', ''), p.display_name, c.name_pt, c.name_en,
-				replace(s.id::text, '-', ''), s.city, s.state, p.price
+				replace(s.id::text, '-', ''), s.city, s.state, p.price, p.freight
 			FROM product p
 			JOIN category c ON c.name_pt = p.category
 			JOIN seller s ON s.id = p.seller_id
@@ -72,7 +72,7 @@ func (r *Postgres) ListProducts(ctx context.Context, q domain.ProductQuery) (dom
 		products, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ProductSummary, error) {
 			var p domain.ProductSummary
 			err := row.Scan(&p.ID, &p.DisplayName, &p.Category.NamePT, &p.Category.NameEN,
-				&p.Seller.ID, &p.Seller.City, &p.Seller.State, &p.Price)
+				&p.Seller.ID, &p.Seller.City, &p.Seller.State, &p.Price, &p.Freight)
 			return p, err
 		})
 		if err != nil {

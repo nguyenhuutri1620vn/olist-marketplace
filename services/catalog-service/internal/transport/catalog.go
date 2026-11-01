@@ -45,14 +45,15 @@ func (c *catalog) ListProducts(ctx context.Context, req *catalogv1.ListProductsR
 	resp := &catalogv1.ListProductsResponse{Total: page.Total, Products: make([]*catalogv1.ProductSummary, len(page.Products))}
 	for i, p := range page.Products {
 		resp.Products[i] = &catalogv1.ProductSummary{
-			ProductId:      p.ID,
-			DisplayName:    p.DisplayName,
-			CategoryNamePt: p.Category.NamePT,
-			CategoryNameEn: p.Category.NameEN,
-			SellerId:       p.Seller.ID,
-			SellerCity:     p.Seller.City,
-			SellerState:    p.Seller.State,
-			PriceCentavos:  p.Price,
+			ProductId:       p.ID,
+			DisplayName:     p.DisplayName,
+			CategoryNamePt:  p.Category.NamePT,
+			CategoryNameEn:  p.Category.NameEN,
+			SellerId:        p.Seller.ID,
+			SellerCity:      p.Seller.City,
+			SellerState:     p.Seller.State,
+			PriceCentavos:   p.Price,
+			FreightCentavos: p.Freight,
 		}
 	}
 	return resp, nil

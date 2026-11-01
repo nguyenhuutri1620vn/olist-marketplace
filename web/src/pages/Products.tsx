@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
 
+import { CheckoutBar } from '@/components/CheckoutBar'
 import { Money } from '@/components/Money'
 import { Pager } from '@/components/Pager'
 import { TableSkeleton } from '@/components/TableSkeleton'
 import { toastRequestError } from '@/components/requestError'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { apiFetch } from '@/lib/api'
+import { type SelectedProduct, pick } from '@/lib/selection'
+import { useSelection } from '@/selection/context'
+import { useSession } from '@/session/context'
 import { pageParam } from '@/lib/paging'
 
 // PAGE_SIZE is the Products table page (UX-DR8).
@@ -19,16 +24,8 @@ const ALL = 'all'
 
 type Category = { name_pt: string; name_en: string }
 
-type ProductRow = {
-  product_id: string
-  display_name: string
-  category_name_pt: string
-  category_name_en: string
-  seller_id: string
-  seller_city: string
-  seller_state: string
-  price_centavos: number
-}
+// A list row is what the selection keeps, plus the Category's dataset name.
+type ProductRow = SelectedProduct & { category_name_pt: string }
 
 type ProductPage = { products: ProductRow[]; total: number }
 
@@ -46,6 +43,11 @@ function sellerLabel(p: Pick<ProductRow, 'seller_id' | 'seller_city' | 'seller_s
 // filter and page live in the URL, so reload and Back keep them.
 export function Products() {
   const [params, setParams] = useSearchParams()
+  const { session } = useSession()
+  const { isSelected, toggle } = useSelection()
+  // Visitors and Customers pick Products for Checkout; Sellers and Admins browse.
+  const selectable = !session || session.role === 'customer'
+  const columns = selectable ? 5 : 4
   const category = params.get('category') ?? ''
   const page = pageParam(params.get('page'))
 
@@ -119,6 +121,11 @@ export function Products() {
       <Table>
         <TableHeader>
           <TableRow>
+            {selectable && (
+              <TableHead className="w-8">
+                <span className="sr-only">Select</span>
+              </TableHead>
+            )}
             <TableHead>Name</TableHead>
             <TableHead>Category</TableHead>
             <TableHead>Seller</TableHead>
@@ -126,11 +133,16 @@ export function Products() {
           </TableRow>
         </TableHeader>
         {loading ? (
-          <TableSkeleton columns={4} />
+          <TableSkeleton columns={columns} />
         ) : (
           <TableBody>
             {data?.products.map((p) => (
               <TableRow key={p.product_id}>
+                {selectable && (
+                  <TableCell>
+                    <Checkbox aria-label={`Select ${p.display_name}`} checked={isSelected(p.product_id)} onCheckedChange={() => toggle(pick(p))} />
+                  </TableCell>
+                )}
                 <TableCell>{p.display_name}</TableCell>
                 <TableCell>{p.category_name_en}</TableCell>
                 <TableCell>{sellerLabel(p)}</TableCell>
@@ -141,7 +153,7 @@ export function Products() {
             ))}
             {data && data.products.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-muted-foreground">
+                <TableCell colSpan={columns} className="text-muted-foreground">
                   {data.total > 0 ? 'This page is past the last one.' : category ? 'No Products in this Category.' : 'No Products yet.'}
                 </TableCell>
               </TableRow>
@@ -150,6 +162,7 @@ export function Products() {
         )}
       </Table>
       <Pager page={page} pages={pages} loading={loading} onGo={(n) => go({ page: n })} />
+      {selectable && <CheckoutBar />}
     </div>
   )
 }

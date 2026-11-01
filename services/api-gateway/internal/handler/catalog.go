@@ -27,14 +27,15 @@ type category struct {
 }
 
 type product struct {
-	ProductID      string `json:"product_id"`
-	DisplayName    string `json:"display_name"`
-	CategoryNamePT string `json:"category_name_pt"`
-	CategoryNameEN string `json:"category_name_en"`
-	SellerID       string `json:"seller_id"`
-	SellerCity     string `json:"seller_city"`
-	SellerState    string `json:"seller_state"`
-	PriceCentavos  int64  `json:"price_centavos"`
+	ProductID       string `json:"product_id"`
+	DisplayName     string `json:"display_name"`
+	CategoryNamePT  string `json:"category_name_pt"`
+	CategoryNameEN  string `json:"category_name_en"`
+	SellerID        string `json:"seller_id"`
+	SellerCity      string `json:"seller_city"`
+	SellerState     string `json:"seller_state"`
+	PriceCentavos   int64  `json:"price_centavos"`
+	FreightCentavos int64  `json:"freight_centavos"`
 }
 
 type productPage struct {
@@ -88,14 +89,15 @@ func RegisterCatalog(mux *http.ServeMux, catalog CatalogBrowser) {
 		out := productPage{Products: make([]product, len(resp.GetProducts())), Total: resp.GetTotal(), Page: page, PageSize: size}
 		for i, p := range resp.GetProducts() {
 			out.Products[i] = product{
-				ProductID:      p.GetProductId(),
-				DisplayName:    p.GetDisplayName(),
-				CategoryNamePT: p.GetCategoryNamePt(),
-				CategoryNameEN: p.GetCategoryNameEn(),
-				SellerID:       p.GetSellerId(),
-				SellerCity:     p.GetSellerCity(),
-				SellerState:    p.GetSellerState(),
-				PriceCentavos:  p.GetPriceCentavos(),
+				ProductID:       p.GetProductId(),
+				DisplayName:     p.GetDisplayName(),
+				CategoryNamePT:  p.GetCategoryNamePt(),
+				CategoryNameEN:  p.GetCategoryNameEn(),
+				SellerID:        p.GetSellerId(),
+				SellerCity:      p.GetSellerCity(),
+				SellerState:     p.GetSellerState(),
+				PriceCentavos:   p.GetPriceCentavos(),
+				FreightCentavos: p.GetFreightCentavos(),
 			}
 		}
 		writeJSON(w, http.StatusOK, out)

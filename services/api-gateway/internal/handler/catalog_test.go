@@ -82,7 +82,7 @@ func TestProductsRoutePassesFilterAndPage(t *testing.T) {
 		ProductId: "cccc0000000000000000000000000001", DisplayName: "Uncategorized #cccc",
 		CategoryNamePt: "Uncategorized", CategoryNameEn: "Uncategorized",
 		SellerId: "6560211a19b47992c3666cc44a7e94c0", SellerCity: "ibitinga", SellerState: "SP",
-		PriceCentavos: 12990,
+		PriceCentavos: 12990, FreightCentavos: 1500,
 	}}}}
 	rec, _ := serveCatalog(f, "/api/products?category=Uncategorized&page=2&page_size=50")
 	if want := (&catalogv1.ListProductsRequest{Category: "Uncategorized", Page: 2, PageSize: 50}); !proto.Equal(f.req, want) {
@@ -91,7 +91,7 @@ func TestProductsRoutePassesFilterAndPage(t *testing.T) {
 	want := `{"products":[{"product_id":"cccc0000000000000000000000000001","display_name":"Uncategorized #cccc",` +
 		`"category_name_pt":"Uncategorized","category_name_en":"Uncategorized",` +
 		`"seller_id":"6560211a19b47992c3666cc44a7e94c0","seller_city":"ibitinga","seller_state":"SP",` +
-		`"price_centavos":12990}],"total":610,"page":2,"page_size":50}`
+		`"price_centavos":12990,"freight_centavos":1500}],"total":610,"page":2,"page_size":50}`
 	if rec.Code != http.StatusOK || rec.Body.String() != want+"\n" {
 		t.Errorf("→ %d %s\nwant 200 %s", rec.Code, rec.Body, want)
 	}

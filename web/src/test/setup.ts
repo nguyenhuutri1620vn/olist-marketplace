@@ -1,7 +1,15 @@
 import '@testing-library/jest-dom/vitest'
-import { cleanup } from '@testing-library/react'
+import { act, cleanup } from '@testing-library/react'
+import { toast } from 'sonner'
 
-afterEach(() => cleanup())
+// sonner keeps toasts in a module-wide store: dismiss them so one test's
+// toasts never satisfy, or fail, the next test's assertions.
+afterEach(() => {
+  act(() => {
+    toast.dismiss()
+  })
+  cleanup()
+})
 
 // jsdom lacks these browser APIs that sonner and Radix use.
 window.matchMedia ??= ((query: string) => ({

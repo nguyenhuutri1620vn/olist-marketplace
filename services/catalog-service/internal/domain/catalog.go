@@ -124,6 +124,7 @@ type ProductSummary struct {
 	Category    Category
 	Seller      Seller
 	Price       int64
+	Freight     int64
 }
 
 // ProductPage is one page of Products and the count matching the filter.

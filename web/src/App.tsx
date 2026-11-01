@@ -4,6 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router'
 import { Layout } from '@/components/Layout'
 import { RequireRole } from '@/components/RequireRole'
 import { Toaster } from '@/components/ui/sonner'
+import { CheckoutReview } from '@/pages/CheckoutReview'
 import { Login } from '@/pages/Login'
 import { MyOrders } from '@/pages/MyOrders'
 import { NotFound } from '@/pages/NotFound'
@@ -11,13 +12,14 @@ import { OrderDetail } from '@/pages/OrderDetail'
 import { Placeholder } from '@/pages/Placeholder'
 import { Products } from '@/pages/Products'
 import { Register } from '@/pages/Register'
+import { SelectionProvider } from '@/selection/SelectionProvider'
 import { SessionProvider } from '@/session/SessionContext'
 
 // Providers hold the session and the toast region; they need a router above.
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      {children}
+      <SelectionProvider>{children}</SelectionProvider>
       <Toaster richColors position="top-right" theme="light" />
     </SessionProvider>
   )
@@ -33,7 +35,7 @@ export function AppRoutes() {
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route element={<RequireRole role="customer" />}>
-          <Route path="checkout" element={<Placeholder title="Checkout" />} />
+          <Route path="checkout" element={<CheckoutReview />} />
           <Route path="orders" element={<MyOrders />} />
           <Route path="orders/:id" element={<OrderDetail />} />
         </Route>
