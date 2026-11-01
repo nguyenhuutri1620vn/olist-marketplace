@@ -89,3 +89,45 @@ func NewProduct(id, category, sellerID string, price, freight int64) (Product, e
 	}
 	return Product{ID: id, Category: category, SellerID: sellerID, Price: price, Freight: freight}, nil
 }
+
+// MaxPageSize bounds one page of any list (Story 1.8).
+const MaxPageSize = 100
+
+// ProductQuery selects one page of Products, optionally in one Category.
+type ProductQuery struct {
+	Category string // Portuguese Category name; empty means every Category
+	Page     int32  // 1-based
+	PageSize int32
+}
+
+// NewProductQuery validates the page bounds.
+func NewProductQuery(category string, page, pageSize int32) (ProductQuery, error) {
+	if page < 1 {
+		return ProductQuery{}, invalid("page %d is below 1", page)
+	}
+	if pageSize < 1 || pageSize > MaxPageSize {
+		return ProductQuery{}, invalid("page_size %d is outside 1..%d", pageSize, MaxPageSize)
+	}
+	return ProductQuery{Category: strings.TrimSpace(category), Page: page, PageSize: pageSize}, nil
+}
+
+// Limit is the page size.
+func (q ProductQuery) Limit() int64 { return int64(q.PageSize) }
+
+// Offset is the number of Products before the page.
+func (q ProductQuery) Offset() int64 { return int64(q.Page-1) * int64(q.PageSize) }
+
+// ProductSummary is one Product as browsing clients see it.
+type ProductSummary struct {
+	ID          string
+	DisplayName string
+	Category    Category
+	Seller      Seller
+	Price       int64
+}
+
+// ProductPage is one page of Products and the count matching the filter.
+type ProductPage struct {
+	Products []ProductSummary
+	Total    int64
+}

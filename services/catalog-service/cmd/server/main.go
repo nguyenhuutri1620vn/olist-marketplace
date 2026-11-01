@@ -17,21 +17,26 @@ func main() {
 	app.Main(catalogService())
 }
 
-// catalogService wires migrations, the import RPCs and their policy.
+// catalogService wires migrations, the browsing and import RPCs and their policy.
 func catalogService() app.Service {
 	return app.Service{
 		Name:       "catalog-service",
 		Migrations: migrations.FS,
 		GRPC:       true,
-		// The import RPCs are reachable only on the internal network (the
-		// gateway never routes them); the importer runs without a token.
 		Policy: auth.Policy{Public: []string{
+			// Browsing needs no token (NFR7).
+			catalogv1.CatalogService_ListCategories_FullMethodName,
+			catalogv1.CatalogService_ListProducts_FullMethodName,
+			// The import RPCs are reachable only on the internal network (the
+			// gateway never routes them); the importer runs without a token.
 			catalogv1.CatalogAdminService_ImportCategories_FullMethodName,
 			catalogv1.CatalogAdminService_ImportSellers_FullMethodName,
 			catalogv1.CatalogAdminService_ImportProducts_FullMethodName,
 		}},
 		RegisterGRPC: func(s *grpc.Server, pool *pgxpool.Pool) {
-			transport.RegisterAdmin(s, service.NewImporter(repository.New(pool)))
+			repo := repository.New(pool)
+			transport.RegisterCatalog(s, service.NewBrowser(repo))
+			transport.RegisterAdmin(s, service.NewImporter(repo))
 		},
 	}
 }

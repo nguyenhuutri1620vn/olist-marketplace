@@ -4,5 +4,51 @@ package catalog.v1;
 
 option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1";
 
-// CatalogService is the gRPC contract of catalog-service. RPCs arrive with later stories.
-service CatalogService {}
+// CatalogService serves the catalog to browsing clients (FR13). Both RPCs are
+// public: browsing needs no token (NFR7).
+service CatalogService {
+  rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+}
+
+message ListCategoriesRequest {}
+
+// ListCategoriesResponse holds every Category, "Uncategorized" included.
+message ListCategoriesResponse {
+  repeated Category categories = 1;
+}
+
+// Category is keyed by its Portuguese dataset name; name_en is its label.
+message Category {
+  string name_pt = 1;
+  string name_en = 2;
+}
+
+message ListProductsRequest {
+  // Portuguese Category name; empty lists every Category.
+  string category = 1;
+  // 1-based.
+  int32 page = 2;
+  // 1 to 100.
+  int32 page_size = 3;
+}
+
+// ListProductsResponse is one page sorted by display name, then product id.
+message ListProductsResponse {
+  repeated ProductSummary products = 1;
+  // Number of Products matching the filter, across all pages.
+  int64 total = 2;
+}
+
+message ProductSummary {
+  // 32 hex digits, as in the dataset.
+  string product_id = 1;
+  string display_name = 2;
+  string category_name_pt = 3;
+  string category_name_en = 4;
+  // 32 hex digits, as in the dataset.
+  string seller_id = 5;
+  string seller_city = 6;
+  string seller_state = 7;
+  int64 price_centavos = 8;
+}

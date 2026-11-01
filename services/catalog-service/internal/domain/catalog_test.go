@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/catalog-service/internal/domain"
@@ -73,5 +74,33 @@ func TestNewProductRejectsBadInput(t *testing.T) {
 		if _, err := domain.NewProduct(tc.id, "x", tc.seller, tc.price, tc.freight); !errors.Is(err, domain.ErrInvalid) {
 			t.Errorf("%s: err = %v, want ErrInvalid", name, err)
 		}
+	}
+}
+
+func TestNewProductQueryChecksPageBounds(t *testing.T) {
+	q, err := domain.NewProductQuery("  beleza_saude ", 3, 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.Category != "beleza_saude" || q.Limit() != 20 || q.Offset() != 40 {
+		t.Errorf("query = %+v, limit %d, offset %d; want beleza_saude, 20, 40", q, q.Limit(), q.Offset())
+	}
+	if _, err := domain.NewProductQuery("", 1, domain.MaxPageSize); err != nil {
+		t.Errorf("page_size %d rejected: %v", domain.MaxPageSize, err)
+	}
+	for _, tc := range []struct{ page, size int32 }{{0, 20}, {-1, 20}, {1, 0}, {1, -5}, {1, domain.MaxPageSize + 1}} {
+		if _, err := domain.NewProductQuery("", tc.page, tc.size); !errors.Is(err, domain.ErrInvalid) {
+			t.Errorf("page %d size %d: err = %v, want ErrInvalid", tc.page, tc.size, err)
+		}
+	}
+}
+
+func TestProductQueryOffsetDoesNotOverflow(t *testing.T) {
+	q, err := domain.NewProductQuery("", math.MaxInt32, domain.MaxPageSize)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := int64(math.MaxInt32-1) * domain.MaxPageSize; q.Offset() != want {
+		t.Errorf("Offset = %d, want %d", q.Offset(), want)
 	}
 }

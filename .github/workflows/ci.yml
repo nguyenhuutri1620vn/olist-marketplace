@@ -162,6 +162,14 @@ jobs:
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/checkout)" = 404
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/seller/orders)" = 403
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/admin/vouchers)" = 403
+      - name: Browsing is public (no dataset in CI, so only the Uncategorized row)
+        run: |
+          curl -fsS 127.0.0.1:8080/api/categories | jq -e '.categories | any(.name_pt == "Uncategorized")'
+          curl -fsS '127.0.0.1:8080/api/products?category=Uncategorized' | jq -e '.total == 0 and .products == []'
+          # page=0 is caught by the gateway; the other two by catalog-service.
+          for q in page=0 page_size=101 category=nope; do
+            test "$(curl -s -o /dev/null -w '%{http_code}' "127.0.0.1:8080/api/products?$q")" = 400
+          done
       - name: web serves the app and proxies /api/ to the gateway
         run: |
           curl -fsS 127.0.0.1:5173/ | grep -q '<title>Olist Marketplace</title>'

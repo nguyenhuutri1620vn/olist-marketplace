@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { Login } from '@/pages/Login'
 import { NotFound } from '@/pages/NotFound'
 import { Placeholder } from '@/pages/Placeholder'
+import { Products } from '@/pages/Products'
 import { Register } from '@/pages/Register'
 import { SessionProvider } from '@/session/SessionContext'
 
@@ -26,7 +27,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route index element={<Placeholder title="Products" />} />
+        <Route index element={<Products />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
         <Route element={<RequireRole role="customer" />}>

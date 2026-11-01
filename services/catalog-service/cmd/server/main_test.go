@@ -3,6 +3,8 @@ package main
 import (
 	"testing"
 
+	"google.golang.org/grpc"
+
 	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 )
 
@@ -17,6 +19,30 @@ func TestImportRPCsArePublic(t *testing.T) {
 	} {
 		if !p.IsPublic(m) {
 			t.Errorf("%s needs a token; the importer has none", m)
+		}
+	}
+}
+
+// Browsing needs no token (NFR7).
+func TestBrowsingRPCsArePublic(t *testing.T) {
+	p := catalogService().Policy
+	for _, m := range []string{
+		catalogv1.CatalogService_ListCategories_FullMethodName,
+		catalogv1.CatalogService_ListProducts_FullMethodName,
+	} {
+		if !p.IsPublic(m) {
+			t.Errorf("%s needs a token; browsing is public", m)
+		}
+	}
+}
+
+func TestBothServicesAreRegistered(t *testing.T) {
+	s := grpc.NewServer()
+	catalogService().RegisterGRPC(s, nil)
+	info := s.GetServiceInfo()
+	for _, name := range []string{catalogv1.CatalogService_ServiceDesc.ServiceName, catalogv1.CatalogAdminService_ServiceDesc.ServiceName} {
+		if _, ok := info[name]; !ok {
+			t.Errorf("%s not registered", name)
 		}
 	}
 }

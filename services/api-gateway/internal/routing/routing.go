@@ -1,5 +1,5 @@
-// Package routing builds the gateway's HTTP API: public auth routes and the
-// role-gated route groups (FR16).
+// Package routing builds the gateway's HTTP API: public auth and browsing
+// routes and the role-gated route groups (FR16).
 package routing
 
 import (
@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
+	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/handler"
 )
@@ -17,6 +18,7 @@ import (
 type Deps struct {
 	Verifier *auth.Verifier
 	Identity identityv1.IdentityServiceClient
+	Catalog  catalogv1.CatalogServiceClient
 	// Upstreams are traced gRPC connections by service name (debug routes).
 	Upstreams map[string]grpc.ClientConnInterface
 }
@@ -33,6 +35,7 @@ var groups = map[auth.Role][]string{
 func New(d Deps) http.Handler {
 	mux := http.NewServeMux()
 	handler.RegisterAuth(mux, d.Identity)
+	handler.RegisterCatalog(mux, d.Catalog)
 	handler.RegisterGRPCHealth(mux, d.Upstreams)
 	notYet := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handler.WriteError(w, http.StatusNotFound, "NOT_FOUND", "no route "+r.Method+" "+r.URL.Path)

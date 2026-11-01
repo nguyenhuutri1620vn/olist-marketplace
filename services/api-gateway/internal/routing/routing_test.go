@@ -12,6 +12,7 @@ import (
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth/authtest"
+	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/routing"
 )
@@ -144,6 +145,32 @@ func TestUnknownPathsGetTheErrorBody(t *testing.T) {
 	for _, p := range []string{"/api/seller", "/api/admin"} {
 		if rec := do(h, p, ""); rec.Code != http.StatusUnauthorized {
 			t.Errorf("%s without token → %d, want 401", p, rec.Code)
+		}
+	}
+}
+
+// okCatalog answers every browsing call with an empty result.
+type okCatalog struct{}
+
+func (okCatalog) ListCategories(context.Context, *catalogv1.ListCategoriesRequest, ...grpc.CallOption) (*catalogv1.ListCategoriesResponse, error) {
+	return &catalogv1.ListCategoriesResponse{}, nil
+}
+
+func (okCatalog) ListProducts(context.Context, *catalogv1.ListProductsRequest, ...grpc.CallOption) (*catalogv1.ListProductsResponse, error) {
+	return &catalogv1.ListProductsResponse{}, nil
+}
+
+// Browsing is public (NFR7): no token, or a stale one sent by a logged-in
+// browser, still lists the catalog.
+func TestBrowsingRoutesArePublic(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	h := routing.New(routing.Deps{Verifier: iss.Verifier(), Catalog: okCatalog{}})
+	expired := iss.TokenAt(t, "a", auth.RoleCustomer, time.Now().Add(-2*time.Hour), time.Hour)
+	for _, p := range []string{"/api/categories", "/api/products", "/api/products?category=Uncategorized&page=2"} {
+		for _, authz := range []string{"", "Bearer " + expired} {
+			if rec := do(h, p, authz); rec.Code != http.StatusOK {
+				t.Errorf("GET %s with %q → %d %s, want 200", p, authz, rec.Code, rec.Body)
+			}
 		}
 	}
 }

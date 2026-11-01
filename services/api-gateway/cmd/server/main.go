@@ -9,6 +9,7 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/app"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
+	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/routing"
 )
@@ -45,6 +46,7 @@ func api() (http.Handler, func(), error) {
 	return routing.New(routing.Deps{
 		Verifier:  auth.NewVerifier(auth.NewKeySet(jwks)),
 		Identity:  identityv1.NewIdentityServiceClient(conns["identity-service"]),
+		Catalog:   catalogv1.NewCatalogServiceClient(conns["catalog-service"]),
 		Upstreams: conns,
 	}), closeAll, nil
 }
