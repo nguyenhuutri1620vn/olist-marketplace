@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/grpc"
+
 	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 )
 
@@ -42,10 +44,16 @@ type productPage struct {
 	PageSize int32     `json:"page_size"`
 }
 
+// CatalogBrowser is the part of CatalogService the browsing routes call.
+type CatalogBrowser interface {
+	ListCategories(ctx context.Context, in *catalogv1.ListCategoriesRequest, opts ...grpc.CallOption) (*catalogv1.ListCategoriesResponse, error)
+	ListProducts(ctx context.Context, in *catalogv1.ListProductsRequest, opts ...grpc.CallOption) (*catalogv1.ListProductsResponse, error)
+}
+
 // RegisterCatalog adds the public GET /api/categories and
 // GET /api/products?category=&page=&page_size= (FR13, NFR7). catalog checks
 // the page bounds and the Category.
-func RegisterCatalog(mux *http.ServeMux, catalog catalogv1.CatalogServiceClient) {
+func RegisterCatalog(mux *http.ServeMux, catalog CatalogBrowser) {
 	mux.HandleFunc("GET /api/categories", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), catalogTimeout)
 		defer cancel()

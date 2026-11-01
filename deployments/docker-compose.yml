@@ -165,6 +165,7 @@ services:
       <<: *env
       DATABASE_URL: postgres://order:${ORDER_DB_PASSWORD:-order}@postgres:5432/order?sslmode=disable
       KAFKA_BROKERS: kafka:9092
+      CATALOG_ADDR: catalog-service:9090
 
   payment-service:
     <<: *kafka-service

@@ -21,17 +21,20 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	CatalogService_ListCategories_FullMethodName = "/catalog.v1.CatalogService/ListCategories"
 	CatalogService_ListProducts_FullMethodName   = "/catalog.v1.CatalogService/ListProducts"
+	CatalogService_GetProducts_FullMethodName    = "/catalog.v1.CatalogService/GetProducts"
 )
 
 // CatalogServiceClient is the client API for CatalogService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// CatalogService serves the catalog to browsing clients (FR13). Both RPCs are
-// public: browsing needs no token (NFR7).
+// CatalogService serves the catalog to browsing clients (FR13) and the
+// Product snapshot order-service takes at Checkout (AD-15). Every RPC is
+// public: catalog data needs no token (NFR7).
 type CatalogServiceClient interface {
 	ListCategories(ctx context.Context, in *ListCategoriesRequest, opts ...grpc.CallOption) (*ListCategoriesResponse, error)
 	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error)
+	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 }
 
 type catalogServiceClient struct {
@@ -62,15 +65,27 @@ func (c *catalogServiceClient) ListProducts(ctx context.Context, in *ListProduct
 	return out, nil
 }
 
+func (c *catalogServiceClient) GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductsResponse)
+	err := c.cc.Invoke(ctx, CatalogService_GetProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CatalogServiceServer is the server API for CatalogService service.
 // All implementations must embed UnimplementedCatalogServiceServer
 // for forward compatibility.
 //
-// CatalogService serves the catalog to browsing clients (FR13). Both RPCs are
-// public: browsing needs no token (NFR7).
+// CatalogService serves the catalog to browsing clients (FR13) and the
+// Product snapshot order-service takes at Checkout (AD-15). Every RPC is
+// public: catalog data needs no token (NFR7).
 type CatalogServiceServer interface {
 	ListCategories(context.Context, *ListCategoriesRequest) (*ListCategoriesResponse, error)
 	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
+	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	mustEmbedUnimplementedCatalogServiceServer()
 }
 
@@ -86,6 +101,9 @@ func (UnimplementedCatalogServiceServer) ListCategories(context.Context, *ListCa
 }
 func (UnimplementedCatalogServiceServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
+}
+func (UnimplementedCatalogServiceServer) GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetProducts not implemented")
 }
 func (UnimplementedCatalogServiceServer) mustEmbedUnimplementedCatalogServiceServer() {}
 func (UnimplementedCatalogServiceServer) testEmbeddedByValue()                        {}
@@ -144,6 +162,24 @@ func _CatalogService_ListProducts_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CatalogService_GetProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CatalogServiceServer).GetProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CatalogService_GetProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CatalogServiceServer).GetProducts(ctx, req.(*GetProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CatalogService_ServiceDesc is the grpc.ServiceDesc for CatalogService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -158,6 +194,10 @@ var CatalogService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListProducts",
 			Handler:    _CatalogService_ListProducts_Handler,
+		},
+		{
+			MethodName: "GetProducts",
+			Handler:    _CatalogService_GetProducts_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

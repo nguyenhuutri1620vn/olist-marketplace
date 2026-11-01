@@ -86,3 +86,27 @@ func (r *Postgres) ListProducts(ctx context.Context, q domain.ProductQuery) (dom
 	}
 	return page, nil
 }
+
+// GetProducts returns the Checkout snapshot of the known Products among ids,
+// sorted by id; unknown ids are absent.
+func (r *Postgres) GetProducts(ctx context.Context, ids []string) ([]domain.ProductSnapshot, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT replace(p.id::text, '-', ''), replace(s.id::text, '-', ''), s.state, c.name_en, p.price, p.freight
+		FROM product p
+		JOIN category c ON c.name_pt = p.category
+		JOIN seller s ON s.id = p.seller_id
+		WHERE p.id = ANY($1::uuid[])
+		ORDER BY p.id`, ids)
+	if err != nil {
+		return nil, classify("get products", err)
+	}
+	out, err := pgx.CollectRows(rows, func(row pgx.CollectableRow) (domain.ProductSnapshot, error) {
+		var p domain.ProductSnapshot
+		err := row.Scan(&p.ID, &p.SellerID, &p.SellerState, &p.CategoryEN, &p.Price, &p.Freight)
+		return p, err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get products: %w", err)
+	}
+	return out, nil
+}

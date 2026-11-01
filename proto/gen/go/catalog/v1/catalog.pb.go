@@ -374,6 +374,183 @@ func (x *ProductSummary) GetPriceCentavos() int64 {
 	return 0
 }
 
+type GetProductsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 32 hex digits each; at most 100.
+	ProductIds    []string `protobuf:"bytes,1,rep,name=product_ids,json=productIds,proto3" json:"product_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProductsRequest) Reset() {
+	*x = GetProductsRequest{}
+	mi := &file_catalog_v1_catalog_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProductsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProductsRequest) ProtoMessage() {}
+
+func (x *GetProductsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_catalog_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProductsRequest.ProtoReflect.Descriptor instead.
+func (*GetProductsRequest) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_catalog_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetProductsRequest) GetProductIds() []string {
+	if x != nil {
+		return x.ProductIds
+	}
+	return nil
+}
+
+// GetProductsResponse holds the known Products; unknown ids are absent.
+type GetProductsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Products      []*ProductSnapshot     `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProductsResponse) Reset() {
+	*x = GetProductsResponse{}
+	mi := &file_catalog_v1_catalog_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProductsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProductsResponse) ProtoMessage() {}
+
+func (x *GetProductsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_catalog_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProductsResponse.ProtoReflect.Descriptor instead.
+func (*GetProductsResponse) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_catalog_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetProductsResponse) GetProducts() []*ProductSnapshot {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+// ProductSnapshot is what an Order Item copies at Checkout (AD-15).
+type ProductSnapshot struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ProductId string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	SellerId  string                 `protobuf:"bytes,2,opt,name=seller_id,json=sellerId,proto3" json:"seller_id,omitempty"`
+	// Two-letter Brazilian state code of the Seller.
+	SellerState string `protobuf:"bytes,3,opt,name=seller_state,json=sellerState,proto3" json:"seller_state,omitempty"`
+	// English Category name; "Uncategorized" without a dataset Category.
+	CategoryNameEn  string `protobuf:"bytes,4,opt,name=category_name_en,json=categoryNameEn,proto3" json:"category_name_en,omitempty"`
+	PriceCentavos   int64  `protobuf:"varint,5,opt,name=price_centavos,json=priceCentavos,proto3" json:"price_centavos,omitempty"`
+	FreightCentavos int64  `protobuf:"varint,6,opt,name=freight_centavos,json=freightCentavos,proto3" json:"freight_centavos,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ProductSnapshot) Reset() {
+	*x = ProductSnapshot{}
+	mi := &file_catalog_v1_catalog_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductSnapshot) ProtoMessage() {}
+
+func (x *ProductSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_catalog_v1_catalog_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductSnapshot.ProtoReflect.Descriptor instead.
+func (*ProductSnapshot) Descriptor() ([]byte, []int) {
+	return file_catalog_v1_catalog_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *ProductSnapshot) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *ProductSnapshot) GetSellerId() string {
+	if x != nil {
+		return x.SellerId
+	}
+	return ""
+}
+
+func (x *ProductSnapshot) GetSellerState() string {
+	if x != nil {
+		return x.SellerState
+	}
+	return ""
+}
+
+func (x *ProductSnapshot) GetCategoryNameEn() string {
+	if x != nil {
+		return x.CategoryNameEn
+	}
+	return ""
+}
+
+func (x *ProductSnapshot) GetPriceCentavos() int64 {
+	if x != nil {
+		return x.PriceCentavos
+	}
+	return 0
+}
+
+func (x *ProductSnapshot) GetFreightCentavos() int64 {
+	if x != nil {
+		return x.FreightCentavos
+	}
+	return 0
+}
+
 var File_catalog_v1_catalog_proto protoreflect.FileDescriptor
 
 const file_catalog_v1_catalog_proto_rawDesc = "" +
@@ -405,10 +582,24 @@ const file_catalog_v1_catalog_proto_rawDesc = "" +
 	"\vseller_city\x18\x06 \x01(\tR\n" +
 	"sellerCity\x12!\n" +
 	"\fseller_state\x18\a \x01(\tR\vsellerState\x12%\n" +
-	"\x0eprice_centavos\x18\b \x01(\x03R\rpriceCentavos2\xbc\x01\n" +
+	"\x0eprice_centavos\x18\b \x01(\x03R\rpriceCentavos\"5\n" +
+	"\x12GetProductsRequest\x12\x1f\n" +
+	"\vproduct_ids\x18\x01 \x03(\tR\n" +
+	"productIds\"N\n" +
+	"\x13GetProductsResponse\x127\n" +
+	"\bproducts\x18\x01 \x03(\v2\x1b.catalog.v1.ProductSnapshotR\bproducts\"\xec\x01\n" +
+	"\x0fProductSnapshot\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1b\n" +
+	"\tseller_id\x18\x02 \x01(\tR\bsellerId\x12!\n" +
+	"\fseller_state\x18\x03 \x01(\tR\vsellerState\x12(\n" +
+	"\x10category_name_en\x18\x04 \x01(\tR\x0ecategoryNameEn\x12%\n" +
+	"\x0eprice_centavos\x18\x05 \x01(\x03R\rpriceCentavos\x12)\n" +
+	"\x10freight_centavos\x18\x06 \x01(\x03R\x0ffreightCentavos2\x8c\x02\n" +
 	"\x0eCatalogService\x12W\n" +
 	"\x0eListCategories\x12!.catalog.v1.ListCategoriesRequest\x1a\".catalog.v1.ListCategoriesResponse\x12Q\n" +
-	"\fListProducts\x12\x1f.catalog.v1.ListProductsRequest\x1a .catalog.v1.ListProductsResponseBSZQgithub.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1b\x06proto3"
+	"\fListProducts\x12\x1f.catalog.v1.ListProductsRequest\x1a .catalog.v1.ListProductsResponse\x12N\n" +
+	"\vGetProducts\x12\x1e.catalog.v1.GetProductsRequest\x1a\x1f.catalog.v1.GetProductsResponseBSZQgithub.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1b\x06proto3"
 
 var (
 	file_catalog_v1_catalog_proto_rawDescOnce sync.Once
@@ -422,7 +613,7 @@ func file_catalog_v1_catalog_proto_rawDescGZIP() []byte {
 	return file_catalog_v1_catalog_proto_rawDescData
 }
 
-var file_catalog_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_catalog_v1_catalog_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_catalog_v1_catalog_proto_goTypes = []any{
 	(*ListCategoriesRequest)(nil),  // 0: catalog.v1.ListCategoriesRequest
 	(*ListCategoriesResponse)(nil), // 1: catalog.v1.ListCategoriesResponse
@@ -430,19 +621,25 @@ var file_catalog_v1_catalog_proto_goTypes = []any{
 	(*ListProductsRequest)(nil),    // 3: catalog.v1.ListProductsRequest
 	(*ListProductsResponse)(nil),   // 4: catalog.v1.ListProductsResponse
 	(*ProductSummary)(nil),         // 5: catalog.v1.ProductSummary
+	(*GetProductsRequest)(nil),     // 6: catalog.v1.GetProductsRequest
+	(*GetProductsResponse)(nil),    // 7: catalog.v1.GetProductsResponse
+	(*ProductSnapshot)(nil),        // 8: catalog.v1.ProductSnapshot
 }
 var file_catalog_v1_catalog_proto_depIdxs = []int32{
 	2, // 0: catalog.v1.ListCategoriesResponse.categories:type_name -> catalog.v1.Category
 	5, // 1: catalog.v1.ListProductsResponse.products:type_name -> catalog.v1.ProductSummary
-	0, // 2: catalog.v1.CatalogService.ListCategories:input_type -> catalog.v1.ListCategoriesRequest
-	3, // 3: catalog.v1.CatalogService.ListProducts:input_type -> catalog.v1.ListProductsRequest
-	1, // 4: catalog.v1.CatalogService.ListCategories:output_type -> catalog.v1.ListCategoriesResponse
-	4, // 5: catalog.v1.CatalogService.ListProducts:output_type -> catalog.v1.ListProductsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	8, // 2: catalog.v1.GetProductsResponse.products:type_name -> catalog.v1.ProductSnapshot
+	0, // 3: catalog.v1.CatalogService.ListCategories:input_type -> catalog.v1.ListCategoriesRequest
+	3, // 4: catalog.v1.CatalogService.ListProducts:input_type -> catalog.v1.ListProductsRequest
+	6, // 5: catalog.v1.CatalogService.GetProducts:input_type -> catalog.v1.GetProductsRequest
+	1, // 6: catalog.v1.CatalogService.ListCategories:output_type -> catalog.v1.ListCategoriesResponse
+	4, // 7: catalog.v1.CatalogService.ListProducts:output_type -> catalog.v1.ListProductsResponse
+	7, // 8: catalog.v1.CatalogService.GetProducts:output_type -> catalog.v1.GetProductsResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_catalog_v1_catalog_proto_init() }
@@ -456,7 +653,7 @@ func file_catalog_v1_catalog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_catalog_v1_catalog_proto_rawDesc), len(file_catalog_v1_catalog_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

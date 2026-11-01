@@ -4,11 +4,13 @@ package catalog.v1;
 
 option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1;catalogv1";
 
-// CatalogService serves the catalog to browsing clients (FR13). Both RPCs are
-// public: browsing needs no token (NFR7).
+// CatalogService serves the catalog to browsing clients (FR13) and the
+// Product snapshot order-service takes at Checkout (AD-15). Every RPC is
+// public: catalog data needs no token (NFR7).
 service CatalogService {
   rpc ListCategories(ListCategoriesRequest) returns (ListCategoriesResponse);
   rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
 }
 
 message ListCategoriesRequest {}
@@ -51,4 +53,26 @@ message ProductSummary {
   string seller_city = 6;
   string seller_state = 7;
   int64 price_centavos = 8;
+}
+
+message GetProductsRequest {
+  // 32 hex digits each; at most 100.
+  repeated string product_ids = 1;
+}
+
+// GetProductsResponse holds the known Products; unknown ids are absent.
+message GetProductsResponse {
+  repeated ProductSnapshot products = 1;
+}
+
+// ProductSnapshot is what an Order Item copies at Checkout (AD-15).
+message ProductSnapshot {
+  string product_id = 1;
+  string seller_id = 2;
+  // Two-letter Brazilian state code of the Seller.
+  string seller_state = 3;
+  // English Category name; "Uncategorized" without a dataset Category.
+  string category_name_en = 4;
+  int64 price_centavos = 5;
+  int64 freight_centavos = 6;
 }

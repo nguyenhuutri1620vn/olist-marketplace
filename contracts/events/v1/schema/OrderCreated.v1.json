@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nguyenhuutri1620vn/olist-marketplace/contracts/events/v1/order-created",
+  "properties": {
+    "from_status": {
+      "type": "string"
+    },
+    "to_status": {
+      "type": "string"
+    },
+    "order": {
+      "properties": {
+        "order_id": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string"
+        },
+        "checkout_id": {
+          "type": "string"
+        },
+        "purchased_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "historical": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string"
+        },
+        "voucher_amount": {
+          "type": "integer"
+        },
+        "items": {
+          "items": {
+            "properties": {
+              "product_id": {
+                "type": "string"
+              },
+              "seller_id": {
+                "type": "string"
+              },
+              "seller_state": {
+                "type": "string"
+              },
+              "category_en": {
+                "type": "string"
+              },
+              "price": {
+                "type": "integer"
+              },
+              "freight": {
+                "type": "integer"
+              }
+            },
+            "additionalProperties": false,
+            "type": "object",
+            "required": [
+              "product_id",
+              "seller_id",
+              "seller_state",
+              "category_en",
+              "price",
+              "freight"
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "order_id",
+        "customer_id",
+        "checkout_id",
+        "purchased_at",
+        "historical",
+        "status",
+        "voucher_amount",
+        "items"
+      ]
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "from_status",
+    "to_status",
+    "order"
+  ],
+  "title": "OrderCreated"
+}

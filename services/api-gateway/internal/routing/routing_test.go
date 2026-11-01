@@ -14,6 +14,7 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth/authtest"
 	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
+	orderv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/order/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/routing"
 )
 
@@ -171,6 +172,35 @@ func TestBrowsingRoutesArePublic(t *testing.T) {
 			if rec := do(h, p, authz); rec.Code != http.StatusOK {
 				t.Errorf("GET %s with %q → %d %s, want 200", p, authz, rec.Code, rec.Body)
 			}
+		}
+	}
+}
+
+type okOrders struct{}
+
+func (okOrders) Checkout(context.Context, *orderv1.CheckoutRequest, ...grpc.CallOption) (*orderv1.CheckoutResponse, error) {
+	return &orderv1.CheckoutResponse{CheckoutId: "k"}, nil
+}
+
+// Only Customers reach order-service's Checkout.
+func TestCheckoutIsCustomerOnly(t *testing.T) {
+	iss := authtest.NewIssuer(t)
+	h := routing.New(routing.Deps{Verifier: iss.Verifier(), Orders: okOrders{}})
+	post := func(authz string) int {
+		req := httptest.NewRequest(http.MethodPost, "/api/checkout", strings.NewReader(`{"product_ids":["p"],"checkout_idempotency_key":"k"}`))
+		if authz != "" {
+			req.Header.Set("Authorization", authz)
+		}
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	if got := post(""); got != http.StatusUnauthorized {
+		t.Errorf("no token → %d", got)
+	}
+	for role, want := range map[auth.Role]int{auth.RoleCustomer: 200, auth.RoleSeller: 403, auth.RoleAdmin: 403} {
+		if got := post("Bearer " + iss.Token(t, "acc", role)); got != want {
+			t.Errorf("%s → %d, want %d", role, got, want)
 		}
 	}
 }

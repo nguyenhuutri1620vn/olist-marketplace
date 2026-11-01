@@ -18,7 +18,7 @@ func seedBrowse(t *testing.T, repo *repository.Postgres) {
 	products := []domain.Product{
 		must(domain.NewProduct("aaaa0000000000000000000000000003", "beleza_saude", seller1, 300, 0)),
 		must(domain.NewProduct("aaaa0000000000000000000000000001", "beleza_saude", seller2, 100, 0)),
-		must(domain.NewProduct("aaaa0000000000000000000000000002", "beleza_saude", seller1, 200, 0)),
+		must(domain.NewProduct("aaaa0000000000000000000000000002", "beleza_saude", seller1, 200, 37)),
 		must(domain.NewProduct("bbbb0000000000000000000000000001", "pc_gamer", seller1, 400, 0)),
 		must(domain.NewProduct("cccc0000000000000000000000000001", "", seller2, 500, 0)),
 	}
@@ -138,5 +138,21 @@ func TestListProductsRejectsAnUnknownCategory(t *testing.T) {
 	_, err := repo.ListProducts(context.Background(), must(domain.NewProductQuery("no_such_category", 1, 20)))
 	if !errors.Is(err, domain.ErrInvalid) {
 		t.Errorf("err = %v, want ErrInvalid", err)
+	}
+}
+
+func TestGetProductsReturnsTheCheckoutSnapshotOfKnownIDs(t *testing.T) {
+	repo, _ := newRepo(t)
+	seedBrowse(t, repo)
+	got, err := repo.GetProducts(context.Background(), []string{"cccc0000000000000000000000000001", "aaaa0000000000000000000000000002", "ffff0000000000000000000000000000"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.ProductSnapshot{
+		{ID: "aaaa0000000000000000000000000002", SellerID: seller1, SellerState: "SP", CategoryEN: "health_beauty", Price: 200, Freight: 37},
+		{ID: "cccc0000000000000000000000000001", SellerID: seller2, SellerState: "RJ", CategoryEN: domain.Uncategorized, Price: 500, Freight: 0},
+	}
+	if !slices.Equal(got, want) {
+		t.Errorf("GetProducts = %+v\nwant %+v", got, want)
 	}
 }

@@ -27,6 +27,9 @@ func catalogService() app.Service {
 			// Browsing needs no token (NFR7).
 			catalogv1.CatalogService_ListCategories_FullMethodName,
 			catalogv1.CatalogService_ListProducts_FullMethodName,
+			// order-service's Checkout snapshot; public catalog data, called on
+			// the internal network only (the gateway never routes it).
+			catalogv1.CatalogService_GetProducts_FullMethodName,
 			// The import RPCs are reachable only on the internal network (the
 			// gateway never routes them); the importer runs without a token.
 			catalogv1.CatalogAdminService_ImportCategories_FullMethodName,

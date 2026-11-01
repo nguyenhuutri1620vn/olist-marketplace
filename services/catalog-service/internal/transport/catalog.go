@@ -57,3 +57,26 @@ func (c *catalog) ListProducts(ctx context.Context, req *catalogv1.ListProductsR
 	}
 	return resp, nil
 }
+
+func (c *catalog) GetProducts(ctx context.Context, req *catalogv1.GetProductsRequest) (*catalogv1.GetProductsResponse, error) {
+	ids, err := domain.NewProductIDs(req.GetProductIds())
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	snaps, err := c.browser.Snapshots(ctx, ids)
+	if err != nil {
+		return nil, toStatus(err)
+	}
+	resp := &catalogv1.GetProductsResponse{Products: make([]*catalogv1.ProductSnapshot, len(snaps))}
+	for i, p := range snaps {
+		resp.Products[i] = &catalogv1.ProductSnapshot{
+			ProductId:       p.ID,
+			SellerId:        p.SellerID,
+			SellerState:     p.SellerState,
+			CategoryNameEn:  p.CategoryEN,
+			PriceCentavos:   p.Price,
+			FreightCentavos: p.Freight,
+		}
+	}
+	return resp, nil
+}

@@ -2,6 +2,7 @@ package domain_test
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"testing"
 
@@ -102,5 +103,26 @@ func TestProductQueryOffsetDoesNotOverflow(t *testing.T) {
 	}
 	if want := int64(math.MaxInt32-1) * domain.MaxPageSize; q.Offset() != want {
 		t.Errorf("Offset = %d, want %d", q.Offset(), want)
+	}
+}
+
+func TestNewProductIDsValidatesTheList(t *testing.T) {
+	ids, err := domain.NewProductIDs([]string{productID, sellerID})
+	if err != nil || len(ids) != 2 {
+		t.Fatalf("NewProductIDs = %v, %v", ids, err)
+	}
+	many := make([]string, domain.MaxSnapshotIDs+1)
+	for i := range many {
+		many[i] = fmt.Sprintf("%032x", i)
+	}
+	for name, in := range map[string][]string{
+		"empty":    nil,
+		"bad id":   {"xyz"},
+		"repeated": {productID, productID},
+		"too many": many,
+	} {
+		if _, err := domain.NewProductIDs(in); !errors.Is(err, domain.ErrInvalid) {
+			t.Errorf("%s: err = %v, want ErrInvalid", name, err)
+		}
 	}
 }

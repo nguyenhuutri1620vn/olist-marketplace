@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"slices"
 	"testing"
 
 	"google.golang.org/grpc"
@@ -22,16 +23,23 @@ import (
 
 // fakeCatalog records the query that reaches the repository.
 type fakeCatalog struct {
-	cats  []domain.Category
-	page  domain.ProductPage
-	query *domain.ProductQuery
-	err   error
+	cats      []domain.Category
+	page      domain.ProductPage
+	query     *domain.ProductQuery
+	snapshots []domain.ProductSnapshot
+	ids       []string
+	err       error
 }
 
 func (f *fakeCatalog) Categories(context.Context) ([]domain.Category, error) { return f.cats, f.err }
 func (f *fakeCatalog) ListProducts(_ context.Context, q domain.ProductQuery) (domain.ProductPage, error) {
 	f.query = &q
 	return f.page, f.err
+}
+
+func (f *fakeCatalog) GetProducts(_ context.Context, ids []string) ([]domain.ProductSnapshot, error) {
+	f.ids = ids
+	return f.snapshots, f.err
 }
 
 func catalogClient(t *testing.T, repo *fakeCatalog) catalogv1.CatalogServiceClient {
@@ -126,5 +134,24 @@ func TestListMapsRepositoryErrors(t *testing.T) {
 		if got := status.Code(err); got != tc.want {
 			t.Errorf("ListCategories with repo error %v: code = %v, want %v", tc.err, got, tc.want)
 		}
+	}
+}
+
+func TestGetProductsMapsSnapshotsAndValidatesIDs(t *testing.T) {
+	repo := &fakeCatalog{snapshots: []domain.ProductSnapshot{{ID: productID, SellerID: sellerID, SellerState: "SP", CategoryEN: "health_beauty", Price: 5890, Freight: 1329}}}
+	c := catalogClient(t, repo)
+	resp, err := c.GetProducts(context.Background(), &catalogv1.GetProductsRequest{ProductIds: []string{productID}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &catalogv1.GetProductsResponse{Products: []*catalogv1.ProductSnapshot{{
+		ProductId: productID, SellerId: sellerID, SellerState: "SP", CategoryNameEn: "health_beauty", PriceCentavos: 5890, FreightCentavos: 1329,
+	}}}
+	if !proto.Equal(resp, want) || !slices.Equal(repo.ids, []string{productID}) {
+		t.Errorf("GetProducts = %v (repo asked %v)", resp, repo.ids)
+	}
+	repo.ids = nil
+	if _, err := c.GetProducts(context.Background(), &catalogv1.GetProductsRequest{}); status.Code(err) != codes.InvalidArgument || repo.ids != nil {
+		t.Errorf("empty list: %v, repo asked %v", err, repo.ids)
 	}
 }

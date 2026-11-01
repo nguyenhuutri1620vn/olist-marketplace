@@ -10,6 +10,7 @@ import (
 type Catalog interface {
 	Categories(context.Context) ([]domain.Category, error)
 	ListProducts(context.Context, domain.ProductQuery) (domain.ProductPage, error)
+	GetProducts(ctx context.Context, ids []string) ([]domain.ProductSnapshot, error)
 }
 
 // Browser lists Categories and Products (FR13).
@@ -30,4 +31,9 @@ func (b *Browser) Categories(ctx context.Context) ([]domain.Category, error) {
 // Products returns one page of Products; an unknown Category is ErrInvalid.
 func (b *Browser) Products(ctx context.Context, q domain.ProductQuery) (domain.ProductPage, error) {
 	return b.catalog.ListProducts(ctx, q)
+}
+
+// Snapshots returns the Checkout snapshot of the known Products among ids.
+func (b *Browser) Snapshots(ctx context.Context, ids []string) ([]domain.ProductSnapshot, error) {
+	return b.catalog.GetProducts(ctx, ids)
 }

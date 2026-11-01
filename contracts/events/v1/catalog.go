@@ -26,7 +26,9 @@ type Event interface {
 var ErrUnknownType = errors.New("event type not in contracts/events/v1")
 
 // catalog lists every publishable type. Later stories add theirs here.
-var catalog = []Event{}
+var catalog = []Event{
+	OrderCreated{},
+}
 
 var (
 	mu        sync.RWMutex

@@ -7,7 +7,10 @@
 package orderv1
 
 import (
+	context "context"
 	grpc "google.golang.org/grpc"
+	codes "google.golang.org/grpc/codes"
+	status "google.golang.org/grpc/status"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -15,12 +18,21 @@ import (
 // Requires gRPC-Go v1.64.0 or later.
 const _ = grpc.SupportPackageIsVersion9
 
+const (
+	OrderService_Checkout_FullMethodName = "/order.v1.OrderService/Checkout"
+)
+
 // OrderServiceClient is the client API for OrderService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 //
-// OrderService is the gRPC contract of order-service. RPCs arrive with later stories.
+// OrderService is the gRPC contract of order-service, the only writer of
+// Orders (AD-5).
 type OrderServiceClient interface {
+	// Checkout creates one created Order per Seller of the listed Products
+	// (FR1). Customer only. A repeated key with the same Products returns the
+	// original Orders; with other Products it is ALREADY_EXISTS.
+	Checkout(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error)
 }
 
 type orderServiceClient struct {
@@ -31,12 +43,27 @@ func NewOrderServiceClient(cc grpc.ClientConnInterface) OrderServiceClient {
 	return &orderServiceClient{cc}
 }
 
+func (c *orderServiceClient) Checkout(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutResponse)
+	err := c.cc.Invoke(ctx, OrderService_Checkout_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
 //
-// OrderService is the gRPC contract of order-service. RPCs arrive with later stories.
+// OrderService is the gRPC contract of order-service, the only writer of
+// Orders (AD-5).
 type OrderServiceServer interface {
+	// Checkout creates one created Order per Seller of the listed Products
+	// (FR1). Customer only. A repeated key with the same Products returns the
+	// original Orders; with other Products it is ALREADY_EXISTS.
+	Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -47,6 +74,9 @@ type OrderServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedOrderServiceServer struct{}
 
+func (UnimplementedOrderServiceServer) Checkout(context.Context, *CheckoutRequest) (*CheckoutResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Checkout not implemented")
+}
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
 
@@ -68,13 +98,36 @@ func RegisterOrderServiceServer(s grpc.ServiceRegistrar, srv OrderServiceServer)
 	s.RegisterService(&OrderService_ServiceDesc, srv)
 }
 
+func _OrderService_Checkout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).Checkout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_Checkout_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).Checkout(ctx, req.(*CheckoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var OrderService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "order.v1.OrderService",
 	HandlerType: (*OrderServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
-	Streams:     []grpc.StreamDesc{},
-	Metadata:    "order/v1/order.proto",
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Checkout",
+			Handler:    _OrderService_Checkout_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "order/v1/order.proto",
 }

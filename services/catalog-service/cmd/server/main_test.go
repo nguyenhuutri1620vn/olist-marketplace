@@ -29,9 +29,10 @@ func TestBrowsingRPCsArePublic(t *testing.T) {
 	for _, m := range []string{
 		catalogv1.CatalogService_ListCategories_FullMethodName,
 		catalogv1.CatalogService_ListProducts_FullMethodName,
+		catalogv1.CatalogService_GetProducts_FullMethodName, // order-service calls it without a token
 	} {
 		if !p.IsPublic(m) {
-			t.Errorf("%s needs a token; browsing is public", m)
+			t.Errorf("%s needs a token; catalog reads are public", m)
 		}
 	}
 }

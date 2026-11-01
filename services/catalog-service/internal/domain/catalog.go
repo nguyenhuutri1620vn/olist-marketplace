@@ -131,3 +131,36 @@ type ProductPage struct {
 	Products []ProductSummary
 	Total    int64
 }
+
+// MaxSnapshotIDs bounds one GetProducts call; order-service's Checkout
+// limit (domain.MaxProducts there) must not exceed it.
+const MaxSnapshotIDs = 100
+
+// NewProductIDs validates a list of Product ids to look up: 1 to
+// MaxSnapshotIDs dataset ids, none repeated.
+func NewProductIDs(ids []string) ([]string, error) {
+	if len(ids) == 0 || len(ids) > MaxSnapshotIDs {
+		return nil, invalid("want 1 to %d product ids, got %d", MaxSnapshotIDs, len(ids))
+	}
+	seen := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if !datasetID.MatchString(id) {
+			return nil, invalid("product id %q is not 32 hex digits", id)
+		}
+		if seen[id] {
+			return nil, invalid("product id %s is repeated", id)
+		}
+		seen[id] = true
+	}
+	return ids, nil
+}
+
+// ProductSnapshot is what an Order Item copies at Checkout (AD-15).
+type ProductSnapshot struct {
+	ID          string
+	SellerID    string
+	SellerState string
+	CategoryEN  string
+	Price       int64
+	Freight     int64
+}

@@ -93,9 +93,16 @@ func TestConsumerServiceAppliesEvents(t *testing.T) {
 	if n != 1 {
 		t.Fatalf("effects = %d, want the event applied once", n)
 	}
-	page := metricsPage(t, "http://"+ops+"/metrics")
-	if !strings.Contains(page, `inbox_messages_total{consumer="`+c.Group()+`",outcome="applied",topic="`+topic+`"} 1`) ||
-		!strings.Contains(page, `inbox_dlq_depth{topic="`+topic+`"} 0`) {
+	// The DLQ depth watcher's first poll may land a moment after the event.
+	var page string
+	applied := `inbox_messages_total{consumer="` + c.Group() + `",outcome="applied",topic="` + topic + `"} 1`
+	depth := `inbox_dlq_depth{topic="` + topic + `"} 0`
+	for deadline := time.Now().Add(10 * time.Second); time.Now().Before(deadline); time.Sleep(50 * time.Millisecond) {
+		if page = metricsPage(t, "http://"+ops+"/metrics"); strings.Contains(page, applied) && strings.Contains(page, depth) {
+			break
+		}
+	}
+	if !strings.Contains(page, applied) || !strings.Contains(page, depth) {
 		t.Errorf("metrics lack the applied count or the DLQ depth:\n%s", grepLines(page, "inbox_"))
 	}
 	if err := stop(); err != nil {

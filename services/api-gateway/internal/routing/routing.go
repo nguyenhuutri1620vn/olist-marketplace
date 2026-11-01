@@ -9,7 +9,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
-	catalogv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/catalog/v1"
 	identityv1 "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/identity/v1"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/services/api-gateway/internal/handler"
 )
@@ -18,7 +17,8 @@ import (
 type Deps struct {
 	Verifier *auth.Verifier
 	Identity identityv1.IdentityServiceClient
-	Catalog  catalogv1.CatalogServiceClient
+	Catalog  handler.CatalogBrowser
+	Orders   handler.Checkouter
 	// Upstreams are traced gRPC connections by service name (debug routes).
 	Upstreams map[string]grpc.ClientConnInterface
 }
@@ -42,6 +42,7 @@ func New(d Deps) http.Handler {
 	})
 	// Anything unmatched still gets the error body.
 	mux.Handle("/", notYet)
+	mux.Handle("POST /api/checkout", RequireRole(d.Verifier, auth.RoleCustomer)(handler.Checkout(d.Orders)))
 	for role, patterns := range groups {
 		for _, p := range patterns {
 			mux.Handle(p, RequireRole(d.Verifier, role)(notYet))

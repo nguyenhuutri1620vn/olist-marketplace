@@ -4,5 +4,42 @@ package order.v1;
 
 option go_package = "github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go/order/v1;orderv1";
 
-// OrderService is the gRPC contract of order-service. RPCs arrive with later stories.
-service OrderService {}
+// OrderService is the gRPC contract of order-service, the only writer of
+// Orders (AD-5).
+service OrderService {
+  // Checkout creates one created Order per Seller of the listed Products
+  // (FR1). Customer only. A repeated key with the same Products returns the
+  // original Orders; with other Products it is ALREADY_EXISTS.
+  rpc Checkout(CheckoutRequest) returns (CheckoutResponse);
+}
+
+message CheckoutRequest {
+  // 1 to 100 distinct Product ids, 32 hex digits each; no quantities.
+  repeated string product_ids = 1;
+  // Chosen by the client; scoped to the calling Customer.
+  string checkout_idempotency_key = 2;
+}
+
+message CheckoutResponse {
+  string checkout_id = 1;
+  // One per Seller, sorted by seller id.
+  repeated Order orders = 2;
+}
+
+message Order {
+  string order_id = 1;
+  string seller_id = 2;
+  // Dataset word: created, approved, processing, shipped, delivered, canceled.
+  string status = 3;
+  // Σ(price + freight) of the items.
+  int64 total_centavos = 4;
+  repeated OrderItem items = 5;
+}
+
+// OrderItem is the Product snapshot taken at Checkout (AD-15).
+message OrderItem {
+  string product_id = 1;
+  string category_name_en = 2;
+  int64 price_centavos = 3;
+  int64 freight_centavos = 4;
+}

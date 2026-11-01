@@ -2,7 +2,15 @@ module github.com/nguyenhuutri1620vn/olist-marketplace/services/order-service
 
 go 1.27.0
 
-require github.com/nguyenhuutri1620vn/olist-marketplace/pkg v0.0.0
+require (
+	github.com/google/uuid v1.6.0
+	github.com/jackc/pgx/v5 v5.12.0
+	github.com/nguyenhuutri1620vn/olist-marketplace/contracts v0.0.0-00010101000000-000000000000
+	github.com/nguyenhuutri1620vn/olist-marketplace/pkg v0.0.0
+	github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go v0.0.0
+	google.golang.org/grpc v1.85.0
+	google.golang.org/protobuf v1.36.12
+)
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -13,16 +21,13 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/golang-migrate/migrate/v4 v4.20.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.12.0 // indirect
 	github.com/jackc/puddle/v2 v2.2.3 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/nguyenhuutri1620vn/olist-marketplace/contracts v0.0.0-00010101000000-000000000000 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect
 	github.com/prometheus/client_golang v1.25.0 // indirect
 	github.com/prometheus/client_model v0.6.3 // indirect
@@ -48,10 +53,10 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260928230214-8a89bd6388cc // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260928230214-8a89bd6388cc // indirect
-	google.golang.org/grpc v1.85.0 // indirect
-	google.golang.org/protobuf v1.36.12 // indirect
 )
 
 replace github.com/nguyenhuutri1620vn/olist-marketplace/pkg => ../../pkg
 
 replace github.com/nguyenhuutri1620vn/olist-marketplace/contracts => ../../contracts
+
+replace github.com/nguyenhuutri1620vn/olist-marketplace/proto/gen/go => ../../proto/gen/go

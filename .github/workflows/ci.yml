@@ -136,6 +136,11 @@ jobs:
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
         run: go test ./internal/repository/...
+      - name: order repository tests against Postgres
+        working-directory: services/order-service
+        env:
+          DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
+        run: go test ./internal/repository/... ./migrations/...
       - name: identity tests against Postgres
         working-directory: services/identity-service
         env:
@@ -195,6 +200,10 @@ jobs:
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/checkout)" = 404
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/seller/orders)" = 403
           test "$(code -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/admin/vouchers)" = 403
+          # Checkout reaches order-service: no token 401, an empty list 400 (CI has no dataset).
+          test "$(code -X POST 127.0.0.1:8080/api/checkout -d '{}')" = 401
+          test "$(code -X POST -H "Authorization: Bearer $tok" 127.0.0.1:8080/api/checkout \
+            -d '{"product_ids":[],"checkout_idempotency_key":"ci"}')" = 400
       - name: Browsing is public (no dataset in CI, so only the Uncategorized row)
         run: |
           curl -fsS 127.0.0.1:8080/api/categories | jq -e '.categories | any(.name_pt == "Uncategorized")'
