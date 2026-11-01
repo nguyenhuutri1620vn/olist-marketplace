@@ -35,6 +35,8 @@ Port mở ra host (chỉ trên `127.0.0.1`): web app `5173` (mở http://127.0.0
 
 `make import` cần dataset Olist (Kaggle) trong `data/`. Importer chạy trong container trên mạng compose và chỉ gọi admin gRPC của catalog-service và identity-service. Biến môi trường của importer: `DATA_DIR` (mặc định `/data`), `CATALOG_ADDR` (mặc định `catalog-service:9090`), `IDENTITY_ADDR` (mặc định `identity-service:9090`), `DEMO_PASSWORD` (mặc định `olist-demo-2026`). Test `TestLoadRealDataset` chỉ chạy khi đặt `OLIST_DATA_DIR` trỏ tới thư mục CSV.
 
+Event lên Kafka chỉ đi qua outbox: use case gọi `outbox.Write(ctx, tx, event, meta)` trong transaction của mình, và relay của service (`app.Service{Outbox: true}`) publish các dòng chưa gửi theo thứ tự `seq`. Chỉ loại event có trong `contracts/events/v1` mới ghi được; JSON Schema trong `contracts/events/v1/schema` được sinh từ struct Go (`cd contracts && go generate ./...`, có test báo khi lệch). Biến môi trường: `OUTBOX_POLL_INTERVAL` (mặc định `200ms`, tối đa `200ms`). Metric `outbox_unsent_rows` đếm số dòng chưa gửi. Test tích hợp outbox cần thêm `OUTBOX_TEST_KAFKA` (broker Kafka) bên cạnh `DBMIGRATE_TEST_DSN`.
+
 Init script Postgres chỉ chạy khi volume dữ liệu được tạo lần đầu. Đổi mật khẩu DB (`*_DB_PASSWORD`) hoặc thêm database thì phải xoá volume: `docker compose -f deployments/docker-compose.yml down -v`.
 
 ## Account demo

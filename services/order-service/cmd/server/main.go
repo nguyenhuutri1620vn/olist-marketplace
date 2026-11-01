@@ -6,5 +6,10 @@ import (
 )
 
 func main() {
-	app.Main(app.Service{Name: "order-service", Migrations: migrations.FS, GRPC: true, UsesKafka: true})
+	app.Main(orderService())
+}
+
+// orderService wires migrations, gRPC and the outbox relay.
+func orderService() app.Service {
+	return app.Service{Name: "order-service", Migrations: migrations.FS, GRPC: true, UsesKafka: true, Outbox: true}
 }

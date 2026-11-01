@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nguyenhuutri1620vn/olist-marketplace/contracts/events/v1/envelope",
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "event_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "event_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "aggregate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "historical": {
+      "type": "boolean"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "origin_published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "traceparent": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "event_version",
+    "aggregate_id",
+    "historical",
+    "occurred_at",
+    "published_at",
+    "origin_published_at",
+    "traceparent",
+    "payload"
+  ],
+  "title": "Envelope"
+}

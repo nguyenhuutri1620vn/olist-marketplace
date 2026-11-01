@@ -31,12 +31,11 @@ func DBCheck(pool *pgxpool.Pool) ops.Check {
 	return ops.Check{Name: "database", Fn: pool.Ping}
 }
 
-// KafkaCheck returns the readiness check for the brokers in KAFKA_BROKERS
-// (comma-separated) and a function that closes its client.
-func KafkaCheck() (ops.Check, func(), error) {
+// KafkaBrokers reads KAFKA_BROKERS (comma-separated).
+func KafkaBrokers() ([]string, error) {
 	cfg, err := config.Require("KAFKA_BROKERS")
 	if err != nil {
-		return ops.Check{}, nil, err
+		return nil, err
 	}
 	var brokers []string
 	for _, b := range strings.Split(cfg["KAFKA_BROKERS"], ",") {
@@ -45,7 +44,17 @@ func KafkaCheck() (ops.Check, func(), error) {
 		}
 	}
 	if len(brokers) == 0 {
-		return ops.Check{}, nil, fmt.Errorf("KAFKA_BROKERS lists no brokers")
+		return nil, fmt.Errorf("KAFKA_BROKERS lists no brokers")
+	}
+	return brokers, nil
+}
+
+// KafkaCheck returns the readiness check for the brokers in KAFKA_BROKERS
+// and a function that closes its client.
+func KafkaCheck() (ops.Check, func(), error) {
+	brokers, err := KafkaBrokers()
+	if err != nil {
+		return ops.Check{}, nil, err
 	}
 	client, err := kgo.NewClient(kgo.SeedBrokers(brokers...))
 	if err != nil {

@@ -16,9 +16,9 @@ jobs:
         id: filter
         with:
           filters: |
-            api-gateway: ['services/api-gateway/**', 'pkg/**', 'proto/**', 'go.work']
-            identity-service: ['services/identity-service/**', 'pkg/**', 'proto/**', 'go.work']
-            catalog-service: ['services/catalog-service/**', 'pkg/**', 'proto/**', 'go.work']
+            api-gateway: ['services/api-gateway/**', 'pkg/**', 'proto/**', 'contracts/**', 'go.work']
+            identity-service: ['services/identity-service/**', 'pkg/**', 'proto/**', 'contracts/**', 'go.work']
+            catalog-service: ['services/catalog-service/**', 'pkg/**', 'proto/**', 'contracts/**', 'go.work']
             order-service: ['services/order-service/**', 'pkg/**', 'proto/**', 'contracts/**', 'go.work']
             payment-service: ['services/payment-service/**', 'pkg/**', 'proto/**', 'contracts/**', 'go.work']
             shipping-simulator: ['services/shipping-simulator/**', 'pkg/**', 'contracts/**', 'go.work']
@@ -96,16 +96,36 @@ jobs:
           --health-cmd "pg_isready -U postgres"
           --health-interval 2s
           --health-retries 30
+      kafka:
+        image: apache/kafka:4.3.2
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+        ports:
+          - 9092:9092
+        options: >-
+          --health-cmd "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092"
+          --health-interval 5s
+          --health-retries 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
-      - name: Migration tests against Postgres
+      - name: Migration, outbox and relay tests against Postgres and Kafka
         working-directory: pkg
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
-        run: go test ./dbmigrate/... ./bootstrap/... ./app/...
+          OUTBOX_TEST_KAFKA: localhost:9092
+        run: go test ./dbmigrate/... ./bootstrap/... ./app/... ./outbox/... ./eventbus/...
       - name: catalog repository tests against Postgres
         working-directory: services/catalog-service
         env:
@@ -134,6 +154,14 @@ jobs:
           done
           curl -s 127.0.0.1:9090/api/v1/targets | jq '.data.activeTargets[] | {scrapeUrl, health, lastError}'
           exit 1
+      - name: order-service runs the outbox relay (outbox_unsent_rows is 0)
+        run: |
+          for i in $(seq 30); do
+            v=$(curl -s '127.0.0.1:9090/api/v1/query?query=outbox_unsent_rows' | jq -r '.data.result[0].value[1] // empty')
+            test "$v" = 0 && exit 0
+            sleep 2
+          done
+          echo "outbox_unsent_rows never reported 0"; exit 1
       - name: Gateway reaches a service over traced gRPC
         run: curl -fsS 127.0.0.1:8080/debug/grpc-health/catalog-service
       - name: identity serves its JWKS inside the compose network

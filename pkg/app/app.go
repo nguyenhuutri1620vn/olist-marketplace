@@ -23,9 +23,11 @@ import (
 
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/auth"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/bootstrap"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/eventbus"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/logger"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/ops"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/outbox"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/tracing"
 )
 
@@ -37,6 +39,10 @@ type Service struct {
 	Migrations fs.FS
 	// UsesKafka adds a readiness check for KAFKA_BROKERS.
 	UsesKafka bool
+	// Outbox runs the outbox relay (AD-6) on the service's database and
+	// exposes outbox_unsent_rows. It needs Migrations (with the outbox
+	// tables) and UsesKafka; OUTBOX_POLL_INTERVAL sets the poll (≤ 200ms).
+	Outbox bool
 	// GRPC serves a gRPC server with health on GRPC_ADDR (default :9090).
 	GRPC bool
 	// Init, when set, runs once before RegisterGRPC and API, so both can share
@@ -99,6 +105,16 @@ func Healthcheck(ctx context.Context) error {
 // Run starts s and blocks until ctx is done, then shuts down gracefully.
 func Run(ctx context.Context, s Service) error {
 	log := logger.New(s.Name)
+	var pollInterval time.Duration
+	if s.Outbox {
+		if s.Migrations == nil || !s.UsesKafka {
+			return errors.New("Outbox needs Migrations and UsesKafka")
+		}
+		var err error
+		if pollInterval, err = outbox.PollInterval(); err != nil {
+			return err
+		}
+	}
 	shutdownTracing, err := tracing.Init(ctx, s.Name)
 	if err != nil {
 		return err
@@ -141,6 +157,20 @@ func Run(ctx context.Context, s Service) error {
 	}
 
 	reg := ops.NewRegistry()
+	var relay *outbox.Relay
+	if s.Outbox {
+		brokers, err := bootstrap.KafkaBrokers()
+		if err != nil {
+			return err
+		}
+		producer, err := eventbus.NewProducer(brokers)
+		if err != nil {
+			return err
+		}
+		defer producer.Close()
+		relay = outbox.NewRelay(pool, producer, log, pollInterval)
+		reg.MustRegister(relay.Collector())
+	}
 	var servers []server
 	servers = append(servers, httpServer("ops", addr("OPS_ADDR", ":8090"), ops.Handler(reg, checks...)))
 	if s.GRPC {
@@ -182,6 +212,16 @@ func Run(ctx context.Context, s Service) error {
 		go func() { errs <- srv.serve(listeners[i]) }()
 	}
 
+	// The relay outlives the servers' drain, so outbox rows committed by
+	// in-flight requests are still published before exit.
+	relayDone := make(chan struct{})
+	relayCtx, stopRelay := context.WithCancel(context.WithoutCancel(ctx))
+	if relay != nil {
+		go func() { relay.Run(relayCtx); close(relayDone) }()
+	} else {
+		close(relayDone)
+	}
+
 	select {
 	case <-ctx.Done():
 		log.Info("shutting down")
@@ -193,6 +233,8 @@ func Run(ctx context.Context, s Service) error {
 	for _, srv := range servers {
 		srv.shutdown(sctx)
 	}
+	stopRelay()
+	<-relayDone
 	return err
 }
 

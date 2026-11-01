@@ -46,8 +46,8 @@ development_status:
   1-8-browse-and-filter-products: review
   epic-1-retrospective: optional
 
-  epic-2: backlog
-  2-1-event-envelope-and-transactional-outbox-relay: backlog
+  epic-2: in-progress
+  2-1-event-envelope-and-transactional-outbox-relay: review
   2-2-idempotent-inbox-consumers: backlog
   2-3-checkout-creates-one-order-per-seller: backlog
   2-4-customer-sees-own-orders-and-status-timeline: backlog

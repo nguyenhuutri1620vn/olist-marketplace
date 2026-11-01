@@ -29,3 +29,13 @@
   summary: Test the importer's run() wiring end to end (env keys, both admin calls) against a fixture dataset, in a test or a CI smoke step.
   evidence: Only the units and a manual live run cover it; dropping the ImportAccounts call or misspelling DEMO_PASSWORD would pass CI.
 
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-1-event-envelope-and-transactional-outbox-relay.md`
+  summary: Delete or archive sent outbox rows (retention), so the outbox table stops growing forever.
+  evidence: Nothing removes rows with sent_at set; every publishing service's outbox grows with full jsonb envelopes (Story 2.1 review).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-1-event-envelope-and-transactional-outbox-relay.md`
+  summary: Strengthen the CI smoke outbox check to prove a row reaches Kafka once order-service writes events (Story 2.3).
+  evidence: The smoke step now proves the relay counted (gauge NaN until the first count), not that it published; no compose writer exists yet.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-1-event-envelope-and-transactional-outbox-relay.md`
+  summary: Let the catalog hold two major versions of one event type (key by type and major) when the first breaking change lands.
+  evidence: Lookup/Check match on event_type alone, while AD-9 asks for a new major version on rename/remove; schemagen already names files by major.
