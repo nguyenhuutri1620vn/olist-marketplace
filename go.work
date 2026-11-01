@@ -14,5 +14,6 @@ use (
 	./services/payment-service
 	./services/shipping-simulator
 	./tests
+	./tools/dlq-redrive
 	./tools/olist-importer
 )

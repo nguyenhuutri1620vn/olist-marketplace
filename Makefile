@@ -1,16 +1,16 @@
 SERVICES := api-gateway identity-service catalog-service order-service payment-service shipping-simulator analytics-service
 # Shared modules tested alongside the services.
-MODULES := pkg contracts proto/gen/go tests tools/olist-importer
+MODULES := pkg contracts proto/gen/go tests tools/olist-importer tools/dlq-redrive
 
 COMPOSE := docker compose -f deployments/docker-compose.yml
 BUF := go run github.com/bufbuild/buf/cmd/buf@v1.75.0
 # Kaggle CSVs that `make import` copies into the importer container.
 OLIST_FILES := product_category_name_translation.csv olist_sellers_dataset.csv olist_products_dataset.csv olist_orders_dataset.csv olist_order_items_dataset.csv olist_customers_dataset.csv
-IMPORTER := $(COMPOSE) --profile tools
+TOOLS := $(COMPOSE) --profile tools
 # Baseline for buf breaking; CI overrides it with the PR's base branch.
 BUF_AGAINST ?= ../.git\#branch=develop,subdir=proto
 
-.PHONY: build test tidy run-% up down import web-test proto proto-generate proto-lint proto-breaking check-db-isolation
+.PHONY: build test tidy run-% up down import dlq-redrive dlq-check web-test proto proto-generate proto-lint proto-breaking check-db-isolation
 
 build:
 	@for s in $(SERVICES); do \
@@ -47,10 +47,19 @@ down:
 import:
 	@for f in $(OLIST_FILES); do test -f data/$$f || { echo "missing data/$$f: download the Olist dataset from Kaggle into data/"; exit 1; }; done
 	$(COMPOSE) up -d --wait catalog-service identity-service
-	$(IMPORTER) rm -fsv olist-importer
-	$(IMPORTER) create --build olist-importer
-	COPYFILE_DISABLE=1 tar --no-xattrs -C data -cf - $(OLIST_FILES) | docker cp - "$$($(IMPORTER) ps -aq olist-importer)":/data
-	docker start -a "$$($(IMPORTER) ps -aq olist-importer)"
+	$(TOOLS) rm -fsv olist-importer
+	$(TOOLS) create --build olist-importer
+	COPYFILE_DISABLE=1 tar --no-xattrs -C data -cf - $(OLIST_FILES) | docker cp - "$$($(TOOLS) ps -aq olist-importer)":/data
+	docker start -a "$$($(TOOLS) ps -aq olist-importer)"
+
+# Republish <TOPIC>.dlq to TOPIC (safe: consumers are idempotent; AD-7).
+dlq-redrive:
+	@test -n "$(TOPIC)" || { echo "usage: make dlq-redrive TOPIC=<topic>"; exit 2; }
+	$(TOOLS) run --rm --build dlq-redrive -topic $(TOPIC)
+
+# Fail if any *.dlq topic holds records not yet redriven; demo scripts call it.
+dlq-check:
+	$(TOOLS) run --rm --build dlq-redrive -check
 
 check-db-isolation:
 	sh deployments/postgres/check-isolation.sh

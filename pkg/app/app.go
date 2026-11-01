@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -25,6 +26,7 @@ import (
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/bootstrap"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/eventbus"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/grpcx"
+	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/inbox"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/logger"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/ops"
 	"github.com/nguyenhuutri1620vn/olist-marketplace/pkg/outbox"
@@ -43,6 +45,10 @@ type Service struct {
 	// exposes outbox_unsent_rows. It needs Migrations (with the outbox
 	// tables) and UsesKafka; OUTBOX_POLL_INTERVAL sets the poll (≤ 200ms).
 	Outbox bool
+	// Consumers run idempotent Kafka consumers (AD-7) on the service's
+	// database, with inbox metrics and DLQ depth. They need Migrations (with
+	// processed_events) and UsesKafka; INBOX_MAX_ATTEMPTS bounds retries.
+	Consumers []*inbox.Consumer
 	// GRPC serves a gRPC server with health on GRPC_ADDR (default :9090).
 	GRPC bool
 	// Init, when set, runs once before RegisterGRPC and API, so both can share
@@ -61,6 +67,9 @@ type Service struct {
 }
 
 const shutdownTimeout = 10 * time.Second
+
+// dlqDepthInterval is how often inbox_dlq_depth is refreshed.
+const dlqDepthInterval = 15 * time.Second
 
 // DefaultJWKSURL is identity-service's internal JWKS endpoint.
 const DefaultJWKSURL = "http://identity-service:8080/.well-known/jwks.json"
@@ -112,6 +121,23 @@ func Run(ctx context.Context, s Service) error {
 		}
 		var err error
 		if pollInterval, err = outbox.PollInterval(); err != nil {
+			return err
+		}
+	}
+	maxAttempts := 0
+	if len(s.Consumers) > 0 {
+		if s.Migrations == nil || !s.UsesKafka {
+			return errors.New("Consumers need Migrations and UsesKafka")
+		}
+		groups := map[string]bool{}
+		for _, c := range s.Consumers {
+			if c.Group() == "" || len(c.Topics()) == 0 || groups[c.Group()] {
+				return fmt.Errorf("consumer %q needs a group of its own and at least one topic", c.Group())
+			}
+			groups[c.Group()] = true
+		}
+		var err error
+		if maxAttempts, err = inbox.MaxAttempts(); err != nil {
 			return err
 		}
 	}
@@ -171,6 +197,16 @@ func Run(ctx context.Context, s Service) error {
 		relay = outbox.NewRelay(pool, producer, log, pollInterval)
 		reg.MustRegister(relay.Collector())
 	}
+	var consumerDeps inbox.Deps
+	if len(s.Consumers) > 0 {
+		brokers, err := bootstrap.KafkaBrokers()
+		if err != nil {
+			return err
+		}
+		metrics := inbox.NewMetrics()
+		reg.MustRegister(metrics.Collectors()...)
+		consumerDeps = inbox.Deps{Pool: pool, Brokers: brokers, Log: log, Metrics: metrics, MaxAttempts: maxAttempts}
+	}
 	var servers []server
 	servers = append(servers, httpServer("ops", addr("OPS_ADDR", ":8090"), ops.Handler(reg, checks...)))
 	if s.GRPC {
@@ -212,14 +248,26 @@ func Run(ctx context.Context, s Service) error {
 		go func() { errs <- srv.serve(listeners[i]) }()
 	}
 
-	// The relay outlives the servers' drain, so outbox rows committed by
-	// in-flight requests are still published before exit.
-	relayDone := make(chan struct{})
-	relayCtx, stopRelay := context.WithCancel(context.WithoutCancel(ctx))
+	// The relay and the consumers outlive the servers' drain, so outbox rows
+	// committed by in-flight requests are still published before exit.
+	background, stopBackground := context.WithCancel(context.WithoutCancel(ctx))
+	var workers sync.WaitGroup
 	if relay != nil {
-		go func() { relay.Run(relayCtx); close(relayDone) }()
-	} else {
-		close(relayDone)
+		workers.Go(func() { relay.Run(background) })
+	}
+	var topics []string
+	for _, c := range s.Consumers {
+		topics = append(topics, c.Topics()...)
+		workers.Go(func() {
+			if err := c.Run(background, consumerDeps); err != nil {
+				log.Error("consumer stopped", "consumer", c.Group(), "err", err)
+			}
+		})
+	}
+	if len(topics) > 0 {
+		workers.Go(func() {
+			inbox.WatchDLQDepth(background, consumerDeps.Brokers, topics, consumerDeps.Metrics, log, dlqDepthInterval)
+		})
 	}
 
 	select {
@@ -233,8 +281,8 @@ func Run(ctx context.Context, s Service) error {
 	for _, srv := range servers {
 		srv.shutdown(sctx)
 	}
-	stopRelay()
-	<-relayDone
+	stopBackground()
+	workers.Wait()
 	return err
 }
 

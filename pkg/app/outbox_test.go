@@ -128,8 +128,8 @@ func isolatedSchema(t *testing.T, dsn string) string {
 	return u.String()
 }
 
-// metric returns the value of an unlabelled metric on a /metrics page, or "".
-func metric(t *testing.T, url, name string) string {
+// metricsPage fetches a /metrics page ("" when unreachable).
+func metricsPage(t *testing.T, url string) string {
 	t.Helper()
 	resp, err := http.Get(url)
 	if err != nil {
@@ -137,7 +137,13 @@ func metric(t *testing.T, url, name string) string {
 	}
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	for _, line := range strings.Split(string(b), "\n") {
+	return string(b)
+}
+
+// metric returns the value of an unlabelled metric on a /metrics page, or "".
+func metric(t *testing.T, url, name string) string {
+	t.Helper()
+	for _, line := range strings.Split(metricsPage(t, url), "\n") {
 		if v, ok := strings.CutPrefix(line, name+" "); ok {
 			return v
 		}

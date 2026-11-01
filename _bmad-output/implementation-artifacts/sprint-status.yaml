@@ -48,7 +48,7 @@ development_status:
 
   epic-2: in-progress
   2-1-event-envelope-and-transactional-outbox-relay: review
-  2-2-idempotent-inbox-consumers: backlog
+  2-2-idempotent-inbox-consumers: review
   2-3-checkout-creates-one-order-per-seller: backlog
   2-4-customer-sees-own-orders-and-status-timeline: backlog
   2-5-select-products-and-check-out-in-the-web-app: backlog

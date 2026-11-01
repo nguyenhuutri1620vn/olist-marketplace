@@ -27,6 +27,8 @@ make proto                # buf generate + lint + breaking (so với develop)
 make up                   # docker compose: web, 7 service + Postgres, Kafka, Jaeger, Prometheus, Grafana, kafka-ui
 make import               # nạp Category, Seller, Product vào catalog và 41 account demo vào identity (chạy lại không tạo trùng)
 make check-db-isolation   # kiểm tra mỗi DB user chỉ vào được DB của mình
+make dlq-check            # lỗi nếu còn message nằm trong topic *.dlq chưa redrive
+make dlq-redrive TOPIC=order.events   # đưa order.events.dlq về lại order.events
 make web-test             # lint, test và build web app (Node 24)
 make down
 ```
@@ -35,7 +37,7 @@ Port mở ra host (chỉ trên `127.0.0.1`): web app `5173` (mở http://127.0.0
 
 `make import` cần dataset Olist (Kaggle) trong `data/`. Importer chạy trong container trên mạng compose và chỉ gọi admin gRPC của catalog-service và identity-service. Biến môi trường của importer: `DATA_DIR` (mặc định `/data`), `CATALOG_ADDR` (mặc định `catalog-service:9090`), `IDENTITY_ADDR` (mặc định `identity-service:9090`), `DEMO_PASSWORD` (mặc định `olist-demo-2026`). Test `TestLoadRealDataset` chỉ chạy khi đặt `OLIST_DATA_DIR` trỏ tới thư mục CSV.
 
-Event lên Kafka chỉ đi qua outbox: use case gọi `outbox.Write(ctx, tx, event, meta)` trong transaction của mình, và relay của service (`app.Service{Outbox: true}`) publish các dòng chưa gửi theo thứ tự `seq`. Chỉ loại event có trong `contracts/events/v1` mới ghi được; JSON Schema trong `contracts/events/v1/schema` được sinh từ struct Go (`cd contracts && go generate ./...`, có test báo khi lệch). Biến môi trường: `OUTBOX_POLL_INTERVAL` (mặc định `200ms`, tối đa `200ms`). Metric `outbox_unsent_rows` đếm số dòng chưa gửi. Test tích hợp outbox cần thêm `OUTBOX_TEST_KAFKA` (broker Kafka) bên cạnh `DBMIGRATE_TEST_DSN`.
+Event lên Kafka chỉ đi qua outbox: use case gọi `outbox.Write(ctx, tx, event, meta)` trong transaction của mình, và relay của service (`app.Service{Outbox: true}`) publish các dòng chưa gửi theo thứ tự `seq`. Chỉ loại event có trong `contracts/events/v1` mới ghi được; JSON Schema trong `contracts/events/v1/schema` được sinh từ struct Go (`cd contracts && go generate ./...`, có test báo khi lệch). Biến môi trường: `OUTBOX_POLL_INTERVAL` (mặc định `200ms`, trong khoảng `10ms`–`200ms`). Metric `outbox_unsent_rows` đếm số dòng chưa gửi. Consumer dùng `pkg/inbox` (`app.Service{Consumers: …}`): mỗi event được áp dụng cùng dòng `processed_events` trong một transaction, nên nhận lại cùng `event_id` chỉ là `duplicate`. Handler trả `inbox.Reject(reason)` khi event sai về nghiệp vụ (ghi lại, ack, không thử lại); lỗi khác được thử lại tại chỗ (100ms nhân đôi, tối đa 5s), quá `INBOX_MAX_ATTEMPTS` lần (mặc định 5) thì message sang `<topic>.dlq` và partition đi tiếp. Metric: `inbox_messages_total{consumer,topic,outcome}`, `inbox_dlq_parked_total{topic}`, `inbox_dlq_depth{topic}`. Message trong DLQ mang header `dlq-reason`, `dlq-attempts`, `dlq-consumer`; redrive gửi lại cho mọi consumer group của topic và message đến sau các event mới hơn của cùng Order, nên xem lý do trước khi redrive. Test tích hợp outbox và inbox cần thêm `OUTBOX_TEST_KAFKA` (broker Kafka) bên cạnh `DBMIGRATE_TEST_DSN`.
 
 Init script Postgres chỉ chạy khi volume dữ liệu được tạo lần đầu. Đổi mật khẩu DB (`*_DB_PASSWORD`) hoặc thêm database thì phải xoá volume: `docker compose -f deployments/docker-compose.yml down -v`.
 

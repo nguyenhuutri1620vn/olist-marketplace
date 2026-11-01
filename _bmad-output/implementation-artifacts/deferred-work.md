@@ -39,3 +39,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-2-1-event-envelope-and-transactional-outbox-relay.md`
   summary: Let the catalog hold two major versions of one event type (key by type and major) when the first breaking change lands.
   evidence: Lookup/Check match on event_type alone, while AD-9 asks for a new major version on rename/remove; schemagen already names files by major.
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-idempotent-inbox-consumers.md`
+  summary: Add retention for processed_events (with an index on processed_at) alongside the outbox retention item.
+  evidence: Every consumed event leaves a row forever; nothing deletes them (Story 2.2 review).
+- source_spec: `_bmad-output/implementation-artifacts/spec-2-2-idempotent-inbox-consumers.md`
+  summary: Make DLQ redrive progress survive the dlq-redrive group's offset expiry (offsets.retention.minutes, 7 days by default).
+  evidence: Depth uses the group's committed offsets; if they expire, every retained DLQ record counts as pending again and a redrive copies them all a second time (harmless for idempotent consumers, but dlq-check fails).

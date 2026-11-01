@@ -213,6 +213,20 @@ services:
       identity-service:
         condition: service_healthy
 
+  # On demand only (`make dlq-redrive TOPIC=…`, `make dlq-check`): inspects and
+  # redrives <topic>.dlq dead-letter topics (AD-7).
+  dlq-redrive:
+    profiles: ["tools"]
+    build:
+      context: ..
+      dockerfile: tools/dlq-redrive/Dockerfile
+    environment:
+      <<: *env
+      KAFKA_BROKERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
 networks:
   default:
     name: olist

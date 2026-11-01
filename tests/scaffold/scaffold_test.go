@@ -39,7 +39,7 @@ var apps = []string{"web"}
 var infra = []string{"postgres", "kafka", "jaeger", "prometheus", "grafana", "kafka-ui"}
 
 // tools run on demand (`make import`) under the "tools" profile, never on `make up`.
-var tools = []string{"olist-importer"}
+var tools = []string{"olist-importer", "dlq-redrive"}
 
 const root = "../.."
 
@@ -358,5 +358,21 @@ func TestWebIsServedOnLocalhostAndTalksOnlyToTheGateway(t *testing.T) {
 	upstreams := regexp.MustCompile(`https?://([^;/\s]+)`).FindAllStringSubmatch(conf, -1)
 	if len(upstreams) != 1 || upstreams[0][1] != "api-gateway:8080" || !strings.Contains(conf, "proxy_pass") {
 		t.Errorf("web/nginx.conf proxies to %v, want only api-gateway:8080", upstreams)
+	}
+}
+
+func TestDLQToolsReachKafka(t *testing.T) {
+	r := loadCompose(t).Services["dlq-redrive"]
+	if r.Environment["KAFKA_BROKERS"] != "kafka:9092" {
+		t.Errorf("dlq-redrive KAFKA_BROKERS = %q, want kafka:9092", r.Environment["KAFKA_BROKERS"])
+	}
+	if _, ok := r.DependsOn["kafka"]; !ok {
+		t.Error("dlq-redrive does not wait for kafka")
+	}
+	mk := read(t, "Makefile")
+	for _, want := range []string{"dlq-redrive:", "dlq-check:", "-topic $(TOPIC)", "-check", "tools/dlq-redrive"} {
+		if !strings.Contains(mk, want) {
+			t.Errorf("Makefile lacks %q", want)
+		}
 	}
 }

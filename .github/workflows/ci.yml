@@ -60,7 +60,7 @@ jobs:
           go-version: '1.27'
       - name: Test shared modules and repo scaffold
         run: |
-          for d in pkg contracts proto/gen/go tests tools/olist-importer; do
+          for d in pkg contracts proto/gen/go tests tools/olist-importer tools/dlq-redrive; do
             (cd "$d" && go build ./... && go test ./...) || exit 1
           done
 
@@ -120,12 +120,17 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.27'
-      - name: Migration, outbox and relay tests against Postgres and Kafka
+      - name: Migration, outbox, relay and inbox tests against Postgres and Kafka
         working-directory: pkg
         env:
           DBMIGRATE_TEST_DSN: postgres://postgres:test@localhost:5432/postgres?sslmode=disable
           OUTBOX_TEST_KAFKA: localhost:9092
-        run: go test ./dbmigrate/... ./bootstrap/... ./app/... ./outbox/... ./eventbus/...
+        run: go test ./dbmigrate/... ./bootstrap/... ./app/... ./outbox/... ./eventbus/... ./inbox/...
+      - name: DLQ redrive tool against Kafka
+        working-directory: tools/dlq-redrive
+        env:
+          OUTBOX_TEST_KAFKA: localhost:9092
+        run: go test ./...
       - name: catalog repository tests against Postgres
         working-directory: services/catalog-service
         env:
@@ -204,8 +209,8 @@ jobs:
           curl -fsS 127.0.0.1:5173/seller/orders | grep -q '<div id="root">'
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST 127.0.0.1:5173/api/auth/login \
             -H 'Content-Type: application/json' -d '{"email":"nobody@example.com","password":"x"}')" = 401
-      - name: Importer image builds (tools profile is not built by make up)
-        run: docker compose -f deployments/docker-compose.yml --profile tools build olist-importer
+      - name: Tool images build (tools profile is not built by make up)
+        run: docker compose -f deployments/docker-compose.yml --profile tools build olist-importer dlq-redrive
       - name: Logs on failure
         if: failure()
         run: docker compose -f deployments/docker-compose.yml logs --tail 100
