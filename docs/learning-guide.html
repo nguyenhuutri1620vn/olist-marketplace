@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Học olist-marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f6f2;
+  --surface: #ffffff;
+  --surface-2: #f0eee8;
+  --ink: #1d1f24;
+  --ink-2: #4a4e57;
+  --ink-3: #7a7f8a;
+  --line: #e2dfd6;
+  --accent: #1f6feb;
+  --accent-soft: #e3edfd;
+  --go: #007d9c;
+  --go-soft: #dff3f8;
+  --warn: #b35900;
+  --warn-soft: #fdf0e1;
+  --ok: #1a7f37;
+  --ok-soft: #e2f4e6;
+  --purple: #7c3aed;
+  --purple-soft: #efe8fd;
+  --red: #c4302b;
+  --red-soft: #fbe6e5;
+  --code-bg: #1e2128;
+  --code-ink: #e6e6e6;
+  --hl: #ffd34d;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161a; --surface: #1c1f25; --surface-2: #23272e; --ink: #e8e9ec; --ink-2: #b4b8c1; --ink-3: #868b96;
+    --line: #2f343d; --accent: #5b9bff; --accent-soft: #1d2a40; --go: #4fc3dd; --go-soft: #14303a;
+    --warn: #f0a050; --warn-soft: #3a2a17; --ok: #4ccb6c; --ok-soft: #173222; --purple: #a78bfa; --purple-soft: #2a2140;
+    --red: #f07070; --red-soft: #3a1c1c; --code-bg: #0f1115; --code-ink: #e6e6e6; --hl: #f5c518;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161a; --surface: #1c1f25; --surface-2: #23272e; --ink: #e8e9ec; --ink-2: #b4b8c1; --ink-3: #868b96;
+  --line: #2f343d; --accent: #5b9bff; --accent-soft: #1d2a40; --go: #4fc3dd; --go-soft: #14303a;
+  --warn: #f0a050; --warn-soft: #3a2a17; --ok: #4ccb6c; --ok-soft: #173222; --purple: #a78bfa; --purple-soft: #2a2140;
+  --red: #f07070; --red-soft: #3a1c1c; --code-bg: #0f1115; --code-ink: #e6e6e6; --hl: #f5c518;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 16px; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.65 "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+code, pre, .mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; }
+code { font-size: .86em; background: var(--surface-2); padding: .1em .35em; border-radius: 4px; }
+pre { background: var(--code-bg); color: var(--code-ink); padding: 14px 16px; border-radius: 10px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 12px 0; }
+pre code { background: none; padding: 0; font-size: inherit; color: inherit; }
+pre .c { color: #7f8896; } pre .k { color: #ff8f6b; } pre .s { color: #a5d6a7; } pre .f { color: #82b1ff; }
+a { color: var(--accent); }
+h1, h2, h3, h4 { line-height: 1.3; margin: 1.4em 0 .5em; }
+h1 { font-size: 2rem; margin-top: 0; }
+h2 { font-size: 1.55rem; padding-top: 8px; }
+h3 { font-size: 1.18rem; }
+h4 { font-size: 1rem; color: var(--ink-2); }
+p { margin: .6em 0; }
+.layout { display: grid; grid-template-columns: 270px minmax(0, 1fr); min-height: 100vh; }
+nav.side {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto; padding: 22px 16px 40px;
+  border-right: 1px solid var(--line); background: var(--surface);
+}
+nav.side .brand { font-weight: 700; font-size: 1.05rem; margin-bottom: 2px; }
+nav.side .sub { color: var(--ink-3); font-size: .82rem; margin-bottom: 16px; }
+nav.side ol { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+nav.side li a {
+  display: block; padding: 6px 10px; border-radius: 8px; color: var(--ink-2); text-decoration: none; font-size: .92rem;
+}
+nav.side li a::before { counter-increment: s; content: counter(s) ". "; color: var(--ink-3); }
+nav.side li a:hover { background: var(--surface-2); color: var(--ink); }
+nav.side li a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.theme-btn { margin-top: 18px; width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; font: inherit; font-size: .88rem; }
+main { padding: 36px 48px 120px; max-width: 1080px; }
+section { margin-bottom: 56px; }
+.lede { font-size: 1.1rem; color: var(--ink-2); max-width: 760px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); margin: 14px 0; }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.grid .card { margin: 0; }
+.callout { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 12px 16px; border-radius: 0 10px 10px 0; margin: 14px 0; }
+.callout.analogy { border-color: var(--purple); background: var(--purple-soft); }
+.callout.warn { border-color: var(--warn); background: var(--warn-soft); }
+.callout.ok { border-color: var(--ok); background: var(--ok-soft); }
+.callout b.t { display: block; margin-bottom: 2px; }
+.pill { display: inline-block; font-size: .74rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--ink-2); vertical-align: middle; }
+.pill.go { background: var(--go-soft); color: var(--go); }
+.pill.proto { background: var(--purple-soft); color: var(--purple); }
+.pill.sql { background: var(--warn-soft); color: var(--warn); }
+.pill.ts { background: var(--accent-soft); color: var(--accent); }
+.pill.cfg { background: var(--ok-soft); color: var(--ok); }
+.pill.todo { background: var(--red-soft); color: var(--red); }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; margin: 10px 0; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--ink-3); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .03em; }
+td code { white-space: nowrap; }
+.tablewrap { overflow-x: auto; }
+details.file { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; }
+details.file > summary { cursor: pointer; padding: 12px 16px; list-style: none; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+details.file > summary::-webkit-details-marker { display: none; }
+details.file > summary::before { content: "▸"; color: var(--ink-3); transition: transform .15s; }
+details.file[open] > summary::before { transform: rotate(90deg); }
+details.file > summary .path { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: .9rem; }
+details.file > summary .why { color: var(--ink-2); font-size: .9rem; flex: 1 1 260px; }
+details.file > .body { padding: 0 18px 14px; border-top: 1px solid var(--line); }
+.filter { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font: inherit; margin: 8px 0 4px; }
+/* diagram */
+.diagram { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; box-shadow: var(--shadow); }
+.diagram svg { width: 100%; height: auto; display: block; }
+.node rect { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; transition: fill .2s, stroke .2s; }
+.node text { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.node text.small { fill: var(--ink-3); font-size: 11.5px; font-weight: 400; }
+.node { cursor: pointer; }
+.node:hover rect { stroke: var(--accent); }
+.node.g-svc rect { fill: var(--go-soft); }
+.node.g-obs rect { fill: var(--purple-soft); }
+.node.g-data rect { fill: var(--warn-soft); }
+.node.g-edge rect { fill: var(--accent-soft); }
+.node.lit rect { stroke: var(--hl); stroke-width: 4; }
+.node.sel rect { stroke: var(--accent); stroke-width: 3; }
+.edge { stroke: var(--ink-3); stroke-width: 1.6; fill: none; }
+.edge.dash { stroke-dasharray: 5 5; }
+.edge.lit { stroke: var(--hl); stroke-width: 4; }
+.sm rect { stroke: var(--line); stroke-width: 1.5; }
+.sm text { fill: var(--ink); font-size: 14px; font-weight: 600; }
+.elabel { fill: var(--ink-3); font-size: 11.5px; }
+.nodeinfo { min-height: 64px; margin-top: 10px; }
+/* stepper */
+.stepper .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 10px 0; }
+.btn { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; font: inherit; font-size: .9rem; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+.stepnum { color: var(--ink-3); font-size: .9rem; }
+.steptext { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; min-height: 120px; }
+.steptext h4 { margin: 0 0 6px; color: var(--ink); }
+.dots { display: flex; gap: 5px; flex-wrap: wrap; }
+.dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--line); cursor: pointer; }
+.dots span.on { background: var(--accent); }
+/* tree */
+.tree { font-family: "JetBrains Mono", monospace; font-size: 13.5px; line-height: 1.75; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; overflow-x: auto; white-space: pre; }
+.tree .d { color: var(--accent); font-weight: 600; }
+.tree .n { color: var(--ink-3); font-family: "Be Vietnam Pro", sans-serif; }
+/* hex */
+.hex { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 12px 0; }
+.hex div { border-radius: 12px; padding: 12px 14px; border: 1px solid var(--line); }
+.hex .l1 { background: var(--ok-soft); } .hex .l2 { background: var(--go-soft); } .hex .l3 { background: var(--warn-soft); } .hex .l4 { background: var(--accent-soft); } .hex .l5 { background: var(--surface-2); }
+.hex b { display: block; font-family: "JetBrains Mono", monospace; font-size: .88rem; }
+.hex small { color: var(--ink-2); }
+/* timeline */
+.flow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 12px 0; }
+.flow .st { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: .88rem; }
+.flow .st b { display: block; font-size: .78rem; color: var(--ink-3); font-weight: 600; }
+.flow .ar { color: var(--ink-3); }
+.check li { list-style: none; margin: 6px 0; }
+.check { padding-left: 0; }
+.check label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.check input { margin-top: 6px; width: 17px; height: 17px; accent-color: var(--accent); flex: none; }
+.progress { height: 8px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 8px 0 14px; }
+.progress div { height: 100%; background: var(--ok); width: 0; transition: width .3s; }
+.mobile-nav { display: none; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .steptext code, .callout code, p code, li code { overflow-wrap: anywhere; }
+  nav.side { display: none; }
+  .mobile-nav { display: block; position: sticky; top: 0; z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); padding: 10px 16px; }
+  .mobile-nav select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: inherit; }
+  main { padding: 20px 16px 80px; }
+  h1 { font-size: 1.6rem; }
+}
+</style>
+</head>
+<body>
+<div class="mobile-nav"><select id="mnav" aria-label="Chuyển mục"></select></div>
+<div class="layout">
+<nav class="side" aria-label="Mục lục">
+  <div class="brand">olist-marketplace</div>
+  <div class="sub">Sổ tay mổ xẻ code · Epic 1 (Story 1.1 – 1.7)</div>
+  <ol id="toc">
+    <li><a href="#tong-quan">Bức tranh tổng thể</a></li>
+    <li><a href="#thuat-ngu">Thuật ngữ nền tảng</a></li>
+    <li><a href="#observability">Jaeger · Prometheus · Grafana</a></li>
+    <li><a href="#luong-login">Theo dấu 1 request Login</a></li>
+    <li><a href="#cay-thu-muc">Cây thư mục</a></li>
+    <li><a href="#pkg">pkg/ — thư viện dùng chung</a></li>
+    <li><a href="#hexagonal">Hexagonal trong 1 service</a></li>
+    <li><a href="#identity">identity-service</a></li>
+    <li><a href="#gateway">api-gateway</a></li>
+    <li><a href="#catalog">catalog-service + importer</a></li>
+    <li><a href="#grpc">proto/ và gRPC</a></li>
+    <li><a href="#infra">Docker, Postgres, Kafka</a></li>
+    <li><a href="#saga">Saga · Outbox · Inbox</a></li>
+    <li><a href="#web">web/ — React</a></li>
+    <li><a href="#test-ci">Test và CI</a></li>
+    <li><a href="#bmad">BMAD trong dự án này</a></li>
+    <li><a href="#bai-tap">Bài tập tự làm</a></li>
+  </ol>
+  <button class="theme-btn" id="themeBtn" type="button">Đổi giao diện sáng / tối</button>
+</nav>
+
+<main>
+
+<!-- ============================================================ -->
+<section id="tong-quan">
+  <h1>Mổ xẻ olist-marketplace</h1>
+  <p class="lede">Một sàn thương mại điện tử viết bằng Go theo kiến trúc <b>microservices</b>, dùng dữ liệu thật của Olist (Brazil). Trang này đi từ “nó là gì” tới “từng file, từng hàm làm gì”, viết cho người đang học microservices, gRPC và BMAD.</p>
+
+  <div class="callout analogy"><b class="t">Ví von để nhớ</b>
+  Hãy tưởng tượng một <b>trung tâm thương mại</b>. Mỗi gian hàng (service) tự quản kho của mình (database riêng). Khách vào qua <b>cửa chính có bảo vệ</b> (api-gateway) kiểm tra vé (JWT). Các gian hàng nói chuyện với nhau qua <b>bộ đàm nội bộ</b> có giao thức cố định (gRPC + .proto). Phòng an ninh có <b>camera</b> ghi lại đường đi của từng khách (Jaeger), <b>bảng đếm số</b> người ra vào (Prometheus) và <b>màn hình tổng</b> hiển thị biểu đồ (Grafana).</div>
+
+  <h3>Sơ đồ hệ thống — bấm vào từng ô để xem giải thích</h3>
+  <div class="diagram">
+  <svg id="arch" viewBox="0 0 1000 640" role="img" aria-label="Sơ đồ kiến trúc olist-marketplace">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker>
+    </defs>
+    <!-- edges -->
+    <path class="edge" data-e="browser-web" d="M170 70 H 268" marker-end="url(#arr)"/>
+    <text class="elabel" x="182" y="60">HTTP</text>
+    <path class="edge" data-e="web-gw" d="M450 70 H 518" marker-end="url(#arr)"/>
+    <text class="elabel" x="458" y="60">/api →</text>
+    <path class="edge" data-e="gw-bus" d="M620 105 V 160"/>
+    <path class="edge" data-e="bus" d="M90 160 H 760"/>
+    <text class="elabel" x="632" y="140">gRPC :9090 + JWT</text>
+    <path class="edge" data-e="bus-identity" d="M90 160 V 210" marker-end="url(#arr)"/>
+    <path class="edge" data-e="bus-catalog" d="M255 160 V 210" marker-end="url(#arr)"/>
+    <path class="edge" d="M420 160 V 210" marker-end="url(#arr)"/>
+    <path class="edge" d="M585 160 V 210" marker-end="url(#arr)"/>
+    <path class="edge" d="M915 160 V 210" marker-end="url(#arr)"/>
+    <path class="edge" d="M760 160 H 915"/>
+    <path class="edge dash" data-e="jwks" d="M560 105 C 520 140, 160 150, 120 210" marker-end="url(#arr)"/>
+    <text class="elabel" x="300" y="128">JWKS (HTTP :8080)</text>
+    <path class="edge" data-e="importer" d="M860 105 V 125 H 300 V 210" marker-end="url(#arr)"/>
+    <text class="elabel" x="700" y="120">admin gRPC</text>
+    <!-- db/kafka links -->
+    <path class="edge" data-e="db" d="M90 274 V 330"/>
+    <path class="edge" d="M255 274 V 330"/>
+    <path class="edge" d="M420 274 V 330"/>
+    <path class="edge dash" d="M585 274 V 330"/>
+    <path class="edge dash" d="M750 274 V 330"/>
+    <path class="edge dash" d="M915 274 V 330"/>
+    <text class="elabel" x="20" y="320">mỗi service → DB riêng</text>
+    <text class="elabel" x="610" y="320">Kafka (Epic 2+)</text>
+    <!-- obs links -->
+    <path class="edge dash" data-e="traces" d="M180 470 V 520" marker-end="url(#arr)"/>
+    <text class="elabel" x="190" y="500">traces OTLP :4318</text>
+    <path class="edge dash" data-e="scrape" d="M470 520 V 470" marker-end="url(#arr)"/>
+    <text class="elabel" x="480" y="500">kéo /metrics :8090</text>
+    <path class="edge" data-e="graf" d="M640 580 H 560" marker-end="url(#arr)"/>
+    <path class="edge" d="M640 560 C 520 520, 400 520, 320 552" marker-end="url(#arr)"/>
+
+    <!-- nodes -->
+    <g class="node g-edge" data-n="browser"><rect x="20" y="40" width="150" height="60" rx="10"/><text x="38" y="66">Trình duyệt</text><text class="small" x="38" y="86">người dùng</text></g>
+    <g class="node g-edge" data-n="web"><rect x="270" y="40" width="180" height="60" rx="10"/><text x="288" y="66">web (React)</text><text class="small" x="288" y="86">Vite dev :5173</text></g>
+    <g class="node g-edge" data-n="gateway"><rect x="520" y="35" width="200" height="70" rx="10"/><text x="538" y="62">api-gateway</text><text class="small" x="538" y="82">REST :8080 · ops :8090</text></g>
+    <g class="node g-data" data-n="importer"><rect x="760" y="40" width="220" height="60" rx="10"/><text x="778" y="66">olist-importer</text><text class="small" x="778" y="86">chạy tay: make import</text></g>
+
+    <g class="node g-svc" data-n="identity"><rect x="20" y="210" width="145" height="64" rx="10"/><text x="34" y="238">identity</text><text class="small" x="34" y="258">tài khoản, JWT</text></g>
+    <g class="node g-svc" data-n="catalog"><rect x="185" y="210" width="145" height="64" rx="10"/><text x="199" y="238">catalog</text><text class="small" x="199" y="258">sản phẩm</text></g>
+    <g class="node g-svc" data-n="order"><rect x="350" y="210" width="145" height="64" rx="10"/><text x="364" y="238">order</text><text class="small" x="364" y="258">khung, Epic 2</text></g>
+    <g class="node g-svc" data-n="payment"><rect x="515" y="210" width="145" height="64" rx="10"/><text x="529" y="238">payment</text><text class="small" x="529" y="258">khung, Epic 2</text></g>
+    <g class="node g-svc" data-n="shipping"><rect x="680" y="210" width="145" height="64" rx="10"/><text x="694" y="238">shipping-sim</text><text class="small" x="694" y="258">khung, Epic 3</text></g>
+    <g class="node g-svc" data-n="analytics"><rect x="845" y="210" width="140" height="64" rx="10"/><text x="859" y="238">analytics</text><text class="small" x="859" y="258">khung, Epic 5</text></g>
+
+    <g class="node g-data" data-n="postgres"><rect x="20" y="330" width="540" height="70" rx="10"/><text x="38" y="358">PostgreSQL</text><text class="small" x="38" y="380">6 database: identity · catalog · order · payment · shipping · analytics</text></g>
+    <g class="node g-data" data-n="kafka"><rect x="580" y="330" width="405" height="70" rx="10"/><text x="598" y="358">Kafka</text><text class="small" x="598" y="380">hàng đợi sự kiện · hiện chỉ dùng để kiểm tra readiness</text></g>
+
+    <rect x="20" y="420" width="965" height="50" rx="10" fill="none" stroke="var(--line)" stroke-dasharray="4 4"/>
+    <text class="elabel" x="36" y="450">Mọi service (cả gateway) đều: ghi log JSON · gửi trace · mở /metrics /healthz /readyz trên cổng 8090</text>
+
+    <g class="node g-obs" data-n="jaeger"><rect x="20" y="520" width="300" height="80" rx="10"/><text x="38" y="550">Jaeger</text><text class="small" x="38" y="572">xem TRACE · localhost:16686</text></g>
+    <g class="node g-obs" data-n="prometheus"><rect x="340" y="520" width="220" height="80" rx="10"/><text x="358" y="550">Prometheus</text><text class="small" x="358" y="572">lưu METRICS · :9090</text></g>
+    <g class="node g-obs" data-n="grafana"><rect x="640" y="520" width="170" height="80" rx="10"/><text x="658" y="550">Grafana</text><text class="small" x="658" y="572">vẽ biểu đồ · :3000</text></g>
+    <g class="node g-obs" data-n="kafkaui"><rect x="830" y="520" width="155" height="80" rx="10"/><text x="848" y="550">kafka-ui</text><text class="small" x="848" y="572">xem topic · :8081</text></g>
+  </svg>
+  <div class="card nodeinfo" id="nodeinfo"><b>Bấm vào một ô</b> trong sơ đồ để đọc nó là gì, nằm ở thư mục nào và làm gì.</div>
+  </div>
+
+  <h3>Trạng thái hiện tại của dự án</h3>
+  <p>Đang ở <b>Epic 1</b>. Story 1.1 → 1.6 đã xong phần code (đang chờ review), Story 1.7 (web: login/register) đang làm. Vì vậy:</p>
+  <div class="grid">
+    <div class="card"><span class="pill go">có code thật</span><h4>identity · catalog · api-gateway · importer · pkg/</h4>Đăng ký, đăng nhập, JWT, phân quyền, nạp dữ liệu Olist, quan sát hệ thống.</div>
+    <div class="card"><span class="pill todo">mới là khung</span><h4>order · payment · shipping · analytics</h4>Chỉ có <code>main.go</code> 1 dòng gọi <code>app.Main</code>, các thư mục <code>internal/*</code> rỗng (<code>.gitkeep</code>). Sẽ được viết ở Epic 2–5.</div>
+    <div class="card"><span class="pill ts">đang làm</span><h4>web/</h4>React + Vite: khung trang, Login, Register, phân quyền theo role phía UI.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="thuat-ngu">
+  <h2>Thuật ngữ nền tảng</h2>
+  <p>Đọc phần này trước — mọi phần sau đều dùng lại các khái niệm này.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Thuật ngữ</th><th>Giải thích dễ hiểu</th><th>Trong dự án này</th></tr>
+    <tr><td><b>Microservice</b></td><td>Chia ứng dụng lớn thành nhiều chương trình nhỏ, mỗi cái lo 1 nghiệp vụ, chạy độc lập, có DB riêng.</td><td>7 thư mục trong <code>services/</code>, mỗi cái là 1 Go module (<code>go.mod</code> riêng).</td></tr>
+    <tr><td><b>API Gateway</b></td><td>Cửa ngõ duy nhất từ bên ngoài. Nhận REST/JSON, kiểm tra quyền, rồi gọi service bên trong.</td><td><code>services/api-gateway</code>, cổng 8080 là cổng duy nhất mở ra ngoài cho app.</td></tr>
+    <tr><td><b>gRPC</b></td><td>Cách gọi hàm giữa các chương trình qua mạng, nhanh (HTTP/2 + nhị phân). Gọi như hàm bình thường: <code>client.Login(ctx, req)</code>.</td><td>Gateway → service, importer → service. Cổng 9090 trong mạng nội bộ.</td></tr>
+    <tr><td><b>Protocol Buffers (.proto)</b></td><td>File “hợp đồng” mô tả hàm và kiểu dữ liệu. Công cụ sinh ra code Go cho cả 2 phía từ file này.</td><td><code>proto/&lt;service&gt;/v1/*.proto</code> → sinh ra <code>proto/gen/go</code>.</td></tr>
+    <tr><td><b>JWT</b></td><td>“Vé” dạng chuỗi <code>header.payload.signature</code>. Payload chứa ai (<code>sub</code>), vai trò (<code>role</code>), hết hạn (<code>exp</code>). Ai cũng đọc được, nhưng chỉ người có khoá bí mật mới ký được.</td><td>identity ký, gateway + mọi service kiểm tra. Sống 1 giờ.</td></tr>
+    <tr><td><b>RS256</b></td><td>Ký bằng cặp khoá RSA: <b>private key</b> để ký (chỉ identity giữ), <b>public key</b> để kiểm (ai cũng được có).</td><td>Private key lưu trong bảng <code>signing_key</code> của DB identity.</td></tr>
+    <tr><td><b>JWKS</b></td><td>“JSON Web Key Set” — một URL công khai trả về các public key. Ai muốn kiểm vé thì tải về.</td><td><code>http://identity-service:8080/.well-known/jwks.json</code></td></tr>
+    <tr><td><b>kid</b></td><td>“Key ID” ghi trong header của JWT, cho biết vé được ký bằng khoá nào trong JWKS.</td><td>Là SHA-256 thumbprint của public key (RFC 7638).</td></tr>
+    <tr><td><b>Kafka</b></td><td>Hệ thống hàng đợi sự kiện. Service A ghi “OrderCreated” vào topic, service B đọc lúc nào cũng được — không cần cả hai cùng sống.</td><td>Từ Epic 2: event đi qua outbox → topic → inbox. Xem <a href="#saga">Saga · Outbox · Inbox</a>.</td></tr>
+    <tr><td><b>Migration</b></td><td>Các file SQL đánh số (<code>000001_x.up.sql</code>) tạo/sửa bảng theo thứ tự, tự chạy khi service khởi động.</td><td><code>services/*/migrations/</code>, chạy bằng <code>pkg/dbmigrate</code>.</td></tr>
+    <tr><td><b>Hexagonal</b> (ports &amp; adapters)</td><td>Logic nghiệp vụ ở giữa, không biết gì về DB hay gRPC. DB và gRPC là “adapter” cắm vào qua interface (“port”).</td><td><code>internal/{domain,service,repository,transport}</code>.</td></tr>
+    <tr><td><b>Observability</b></td><td>Khả năng “nhìn vào bên trong” hệ thống đang chạy, qua 3 trụ: <b>Logs</b>, <b>Metrics</b>, <b>Traces</b>.</td><td>slog JSON · Prometheus · Jaeger (xem mục tiếp theo).</td></tr>
+    <tr><td><b>OpenTelemetry (OTel)</b></td><td>Thư viện chuẩn để sinh trace/metric, rồi gửi tới bất kỳ backend nào (Jaeger, Tempo…).</td><td><code>pkg/tracing</code>, <code>otelhttp</code>, <code>otelgrpc</code>.</td></tr>
+    <tr><td><b>Health / Readiness</b></td><td><code>/healthz</code> = “tiến trình còn sống”. <code>/readyz</code> = “đã kết nối được DB/Kafka, sẵn sàng nhận việc”.</td><td><code>pkg/ops</code>, cổng 8090.</td></tr>
+    <tr><td><b>Idempotent</b></td><td>Chạy lại bao nhiêu lần kết quả cũng như chạy 1 lần (không tạo bản ghi trùng).</td><td><code>make import</code> dùng <code>INSERT … ON CONFLICT DO UPDATE</code> (upsert).</td></tr>
+  </table></div>
+
+  <h3>3 cổng (port) của mỗi service — rất quan trọng</h3>
+  <div class="grid">
+    <div class="card"><span class="pill cfg">:8090</span> <b>ops</b><br>/healthz, /readyz, /metrics. Dành cho Docker và Prometheus. Không trace.</div>
+    <div class="card"><span class="pill proto">:9090</span> <b>gRPC</b><br>Các RPC nghiệp vụ + <code>grpc.health.v1</code>. Chỉ trong mạng Docker.</div>
+    <div class="card"><span class="pill ts">:8080</span> <b>HTTP API</b> (tuỳ chọn)<br>Gateway: REST cho trình duyệt. identity: chỉ có JWKS.</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="observability">
+  <h2>Jaeger, Prometheus, Grafana là gì?</h2>
+  <p>Khi có 7 service gọi nhau, lỗi xảy ra thì <i>ở đâu</i>? Chậm thì <i>chậm ở bước nào</i>? Ba công cụ này trả lời các câu hỏi đó. Chúng không phải code của bạn — chỉ là các container chạy cạnh, được khai báo trong <code>deployments/docker-compose.yml</code>.</p>
+
+  <div class="tablewrap"><table>
+    <tr><th>Trụ</th><th>Trả lời câu hỏi</th><th>Ví dụ</th><th>Ai sinh ra</th><th>Ai lưu / hiển thị</th></tr>
+    <tr><td><b>Logs</b></td><td>Chuyện gì đã xảy ra?</td><td><code>{"msg":"listening","addr":":9090","trace_id":"4bf9…"}</code></td><td><code>pkg/logger</code></td><td><code>docker compose logs</code></td></tr>
+    <tr><td><b>Metrics</b></td><td>Bao nhiêu? Nhanh hay chậm? (con số theo thời gian)</td><td>“gateway nhận 12 request/giây, 2% lỗi 500”</td><td><code>pkg/ops</code>, <code>pkg/grpcx</code></td><td><b>Prometheus</b> lưu, <b>Grafana</b> vẽ</td></tr>
+    <tr><td><b>Traces</b></td><td>Một request cụ thể đi qua những đâu, mỗi bước mất bao lâu?</td><td>gateway 12ms → identity 9ms → SQL 2ms</td><td><code>pkg/tracing</code> + otelhttp/otelgrpc</td><td><b>Jaeger</b></td></tr>
+  </table></div>
+
+  <h3 id="jaeger">🔍 Jaeger — xem đường đi của một request</h3>
+  <div class="callout analogy"><b class="t">Ví von</b>Như tính năng “theo dõi đơn hàng” của bưu điện: mỗi trạm (service) đóng một con dấu có giờ vào/ra. Jaeger ghép các con dấu lại thành một dòng thời gian.</div>
+  <p><b>Khái niệm:</b> một <b>trace</b> = toàn bộ hành trình của 1 request, có <code>trace_id</code> duy nhất. Trace gồm nhiều <b>span</b> — mỗi span là một bước (một HTTP handler, một lời gọi gRPC, …) có thời gian bắt đầu/kết thúc và span cha.</p>
+  <p><b>Làm sao trace_id đi được qua nhiều service?</b> Khi gateway gọi gRPC, <code>otelgrpc</code> tự gắn header <code>traceparent</code> (chuẩn W3C) vào metadata. Phía identity đọc header này và tạo span <i>con</i> cùng trace_id. Cấu hình ở <code>pkg/tracing/tracing.go</code>:</p>
+<pre><code><span class="c">// pkg/tracing/tracing.go — rút gọn</span>
+exporter, _ := otlptracehttp.<span class="f">New</span>(ctx)              <span class="c">// gửi tới OTEL_EXPORTER_OTLP_ENDPOINT = http://jaeger:4318</span>
+tp := sdktrace.<span class="f">NewTracerProvider</span>(
+    sdktrace.<span class="f">WithBatcher</span>(exporter),                 <span class="c">// gom span lại gửi theo lô</span>
+    sdktrace.<span class="f">WithResource</span>(... ServiceName(service))) <span class="c">// tên hiện trong Jaeger</span>
+otel.<span class="f">SetTracerProvider</span>(tp)
+otel.<span class="f">SetTextMapPropagator</span>(propagation.TraceContext{}) <span class="c">// chuẩn W3C traceparent</span></code></pre>
+  <p><b>Dùng thử:</b></p>
+<pre><code>make up
+curl 127.0.0.1:8080/debug/grpc-health/catalog-service   <span class="c"># tạo 1 trace đi qua 2 service</span>
+open http://localhost:16686                               <span class="c"># Service = api-gateway → Find Traces</span></code></pre>
+  <p>Bạn sẽ thấy span <code>GET /debug/grpc-health/{service}</code> (gateway) và bên dưới là span con <code>grpc.health.v1.Health/Check</code> của catalog-service. Mẹo: copy <code>trace_id</code> trong log JSON và dán vào ô tìm kiếm của Jaeger — <code>pkg/logger</code> tự gắn trace_id vào mỗi dòng log ghi kèm context.</p>
+
+  <h3 id="prometheus">📈 Prometheus — cơ sở dữ liệu cho các con số</h3>
+  <div class="callout analogy"><b class="t">Ví von</b>Như người đi ghi chỉ số đồng hồ điện: cứ 5 giây lại đi một vòng tới từng nhà (service), đọc số trên đồng hồ (<code>/metrics</code>) và ghi vào sổ kèm thời gian.</div>
+  <p>Prometheus hoạt động theo kiểu <b>pull</b> (tự đi kéo), không phải service đẩy tới. Danh sách “nhà cần ghé” nằm trong <code>deployments/prometheus/prometheus.yml</code>:</p>
+<pre><code><span class="k">scrape_configs:</span>
+  - <span class="k">job_name:</span> services
+    <span class="k">scrape_interval:</span> 5s
+    <span class="k">static_configs:</span>
+      - <span class="k">targets:</span> [api-gateway:8090, identity-service:8090, ...]   <span class="c"># cổng ops</span>
+    <span class="k">relabel_configs:</span>                                              <span class="c"># "identity-service:8090" → label service="identity-service"</span>
+      - <span class="k">source_labels:</span> [__address__]
+        <span class="k">regex:</span> <span class="s">"([^:]+):.*"</span>
+        <span class="k">target_label:</span> service</code></pre>
+  <p><b>Các metric dự án này sinh ra</b> (mở thử <code>docker compose exec api-gateway</code>… hoặc xem trong Prometheus):</p>
+  <div class="tablewrap"><table>
+    <tr><th>Metric</th><th>Loại</th><th>Ý nghĩa</th><th>Sinh ở</th></tr>
+    <tr><td><code>http_requests_total{method,route,code}</code></td><td>Counter (chỉ tăng)</td><td>Số request HTTP đã xử lý</td><td><code>ops.HTTPMetrics</code></td></tr>
+    <tr><td><code>http_request_duration_seconds</code></td><td>Histogram</td><td>Phân bố thời gian xử lý HTTP</td><td><code>ops.HTTPMetrics</code></td></tr>
+    <tr><td><code>grpc_server_handled_total{method,code}</code></td><td>Counter</td><td>Số RPC đã xử lý, theo mã kết quả (OK, Unauthenticated…)</td><td><code>grpcx.NewServer</code></td></tr>
+    <tr><td><code>grpc_server_handling_seconds</code></td><td>Histogram</td><td>Độ trễ của từng RPC</td><td><code>grpcx.NewServer</code></td></tr>
+    <tr><td><code>go_goroutines</code>, <code>process_resident_memory_bytes</code>…</td><td>Gauge</td><td>Sức khoẻ runtime Go, RAM, CPU</td><td><code>ops.NewRegistry</code></td></tr>
+    <tr><td><code>up{service}</code></td><td>Gauge</td><td>1 nếu Prometheus kéo được, 0 nếu service chết</td><td>Prometheus tự tạo</td></tr>
+  </table></div>
+  <p><b>Thử truy vấn PromQL</b> tại <a href="http://localhost:9090" target="_blank" rel="noopener">localhost:9090</a> → Query:</p>
+<pre><code>up                                                         <span class="c"># service nào đang sống?</span>
+sum by (route, code) (rate(http_requests_total[1m]))       <span class="c"># request/giây ở gateway theo route và mã</span>
+histogram_quantile(0.95, sum by (le, route) (rate(http_request_duration_seconds_bucket[5m])))  <span class="c"># p95 latency</span>
+sum by (service, method, code) (rate(grpc_server_handled_total[1m]))  <span class="c"># RPC/giây theo service</span></code></pre>
+  <p>Trang <b>Status → Targets</b> cho thấy cả 7 service có “UP” hay không — CI cũng kiểm tra đúng điều này ở job <code>smoke</code>.</p>
+
+  <h3 id="grafana">📊 Grafana — màn hình hiển thị</h3>
+  <div class="callout analogy"><b class="t">Ví von</b>Prometheus là cuốn sổ ghi chép, Jaeger là kho camera; Grafana là <b>màn hình lớn trong phòng điều khiển</b> đọc từ cả hai rồi vẽ thành biểu đồ đẹp. Grafana <i>không tự lưu dữ liệu</i>.</div>
+  <p>Repo chỉ cấu hình <b>datasource</b> (nguồn dữ liệu) qua <code>deployments/grafana/datasources.yml</code> — Grafana tự nối với <code>http://prometheus:9090</code> và <code>http://jaeger:16686</code> khi khởi động (“provisioning”). Chưa có dashboard nào được tạo sẵn (Ops Dashboard thật sẽ làm ở Epic 5 trong web app).</p>
+  <p><b>Dùng thử:</b> mở <a href="http://localhost:3000" target="_blank" rel="noopener">localhost:3000</a> (mặc định Grafana: admin / admin) → <b>Explore</b> → chọn datasource Prometheus → dán một câu PromQL ở trên → <b>Run query</b>. Đổi datasource sang Jaeger để tìm trace ngay trong Grafana.</p>
+
+  <h3>🧵 Còn kafka-ui?</h3>
+  <p>Giao diện web xem Kafka: topic nào đang có, message bên trong. Hiện chưa có topic nghiệp vụ vì chưa có event — sẽ hữu ích từ Epic 2. Mở tại <a href="http://localhost:8081" target="_blank" rel="noopener">localhost:8081</a>.</p>
+
+  <div class="callout warn"><b class="t">Bảo mật cổng</b>Mọi cổng mở ra máy bạn đều gắn <code>127.0.0.1:</code> (chỉ máy bạn truy cập được), và chỉ có gateway + các UI quan sát được mở. Postgres và các service khác không mở ra ngoài. Test <code>TestComposePublishesOnlyGatewayAndObservabilityPorts</code> canh điều này.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="luong-login" class="stepper">
+  <h2>Theo dấu một request Login, từng bước</h2>
+  <p>Cách học nhanh nhất là đi theo <i>một</i> request xuyên qua toàn bộ hệ thống. Bấm “Bước tiếp” — ô liên quan trong sơ đồ ở mục 1 cũng sáng lên (cuộn lên để xem).</p>
+  <div class="controls">
+    <button class="btn" id="prevStep" type="button">← Bước trước</button>
+    <button class="btn primary" id="nextStep" type="button">Bước tiếp →</button>
+    <span class="stepnum" id="stepNum"></span>
+  </div>
+  <div class="dots" id="stepDots"></div>
+  <div class="steptext" id="stepText" style="margin-top:10px"></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="cay-thu-muc">
+  <h2>Cây thư mục</h2>
+<div class="tree"><span class="d">olist-marketplace/</span>
+├── <span class="d">services/</span>               <span class="n">7 microservice, mỗi cái 1 Go module</span>
+│   ├── <span class="d">api-gateway/</span>        <span class="n">cửa ngõ REST → gRPC, kiểm JWT, phân quyền</span>
+│   ├── <span class="d">identity-service/</span>   <span class="n">tài khoản, mật khẩu bcrypt, ký JWT, JWKS</span>
+│   ├── <span class="d">catalog-service/</span>    <span class="n">danh mục, seller, sản phẩm (dữ liệu Olist)</span>
+│   ├── <span class="d">order-service/</span>      <span class="n">khung — đơn hàng + saga (Epic 2)</span>
+│   ├── <span class="d">payment-service/</span>    <span class="n">khung — thanh toán, voucher (Epic 2)</span>
+│   ├── <span class="d">shipping-simulator/</span> <span class="n">khung — giả lập giao hàng (Epic 3)</span>
+│   └── <span class="d">analytics-service/</span>  <span class="n">khung — doanh thu, dashboard (Epic 5)</span>
+├── <span class="d">pkg/</span>                    <span class="n">thư viện dùng chung: app, auth, ops, grpcx, tracing, logger…</span>
+├── <span class="d">proto/</span>                  <span class="n">hợp đồng gRPC (.proto) + code sinh ra ở gen/go</span>
+├── <span class="d">contracts/</span>              <span class="n">hằng số dùng chung (accounts), danh mục event Kafka (events/v1)</span>
+├── <span class="d">tools/olist-importer/</span>   <span class="n">đọc CSV Kaggle → gọi admin gRPC để nạp dữ liệu</span>
+├── <span class="d">deployments/</span>            <span class="n">docker-compose, Postgres init, Prometheus, Grafana</span>
+├── <span class="d">web/</span>                    <span class="n">frontend React + Vite + Tailwind + shadcn/ui</span>
+├── <span class="d">tests/scaffold/</span>         <span class="n">test kiểm tra cấu trúc repo khớp kiến trúc</span>
+├── <span class="d">.github/workflows/</span>      <span class="n">CI: build, test, buf, integration, smoke</span>
+├── <span class="d">_bmad/</span>                  <span class="n">cấu hình BMAD (module bmm, core)</span>
+├── <span class="d">_bmad-output/</span>           <span class="n">tài liệu BMAD sinh ra: brief, PRD, UX, architecture, epics, spec story</span>
+├── <span class="d">.claude/skills/</span>         <span class="n">các skill BMAD cho Claude Code (bmad-build, bmad-prd…)</span>
+├── <span class="d">data/</span>                   <span class="n">CSV Olist (không commit)</span>
+├── Makefile                <span class="n">lệnh tắt: build, test, up, import, proto…</span>
+└── go.work                 <span class="n">Go workspace gộp mọi module để build cùng nhau</span></div>
+
+  <div class="callout"><b class="t">Vì sao mỗi service có go.mod riêng mà vẫn import được pkg/?</b>
+  Nhờ <code>go.work</code> (Go workspace): nó liệt kê mọi module, nên khi build trong repo, <code>import ".../pkg/app"</code> trỏ thẳng tới thư mục <code>pkg/</code> local. Mỗi service vẫn tách biệt — CI chỉ build lại service nào có file thay đổi.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="pkg">
+  <h2>pkg/ — thư viện dùng chung (trái tim của dự án)</h2>
+  <p>Mọi service đều khởi động bằng <b>một dòng</b>: <code>app.Main(app.Service{...})</code>. Toàn bộ phần “nhàm chán nhưng bắt buộc” (log, trace, metrics, health, migration, gRPC server, tắt êm) nằm trong <code>pkg/</code>. Nhờ vậy service chỉ cần khai báo <i>mình có gì</i>.</p>
+
+  <h3>Vòng đời khi một service khởi động — <code>app.Run</code></h3>
+  <div class="flow">
+    <div class="st"><b>1</b>logger.New</div><span class="ar">→</span>
+    <div class="st"><b>2</b>tracing.Init</div><span class="ar">→</span>
+    <div class="st"><b>3</b>Migrate DB</div><span class="ar">→</span>
+    <div class="st"><b>4</b>OpenDB + DBCheck</div><span class="ar">→</span>
+    <div class="st"><b>5</b>KafkaCheck</div><span class="ar">→</span>
+    <div class="st"><b>6</b>s.Init()</div><span class="ar">→</span>
+    <div class="st"><b>7</b>ops :8090</div><span class="ar">→</span>
+    <div class="st"><b>8</b>gRPC :9090 + Policy</div><span class="ar">→</span>
+    <div class="st"><b>9</b>HTTP API :8080</div><span class="ar">→</span>
+    <div class="st"><b>10</b>Listen tất cả rồi mới Serve</div><span class="ar">→</span>
+    <div class="st"><b>11</b>Chờ SIGTERM → tắt êm</div>
+  </div>
+
+  <input class="filter" id="pkgFilter" type="search" placeholder="Lọc file theo tên hoặc từ khoá (vd: jwt, metrics, migrate)…">
+
+  <div id="pkgFiles">
+  <details class="file" open><summary><span class="pill go">Go</span><span class="path">pkg/app/app.go</span><span class="why">Khung chạy chung cho mọi service</span></summary><div class="body">
+    <table>
+      <tr><th>Tên</th><th>Làm gì</th></tr>
+      <tr><td><code>type Service</code></td><td>Bản khai báo của 1 service: <code>Name</code>, <code>Migrations</code> (SQL nhúng), <code>UsesKafka</code>, <code>GRPC</code>, <code>Init</code> (chạy 1 lần để dựng đối tượng), <code>Policy</code> (ai được gọi RPC nào), <code>RegisterGRPC</code> (gắn handler), <code>API</code> (HTTP handler).</td></tr>
+      <tr><td><code>Main(s)</code></td><td>Điểm vào. Nếu chạy <code>/server healthcheck</code> thì chỉ thăm dò <code>/readyz</code> rồi thoát 0/1 (Docker dùng cái này vì image distroless không có curl). Nếu không: bắt tín hiệu Ctrl-C/SIGTERM rồi gọi <code>Run</code>.</td></tr>
+      <tr><td><code>Healthcheck(ctx)</code></td><td>Gọi <code>http://127.0.0.1:8090/readyz</code> qua <code>ops.Probe</code>.</td></tr>
+      <tr><td><code>Run(ctx, s)</code></td><td>Làm 11 bước ở trên. Điểm hay: <b>bind mọi port trước</b>, lỗi port nào thì đóng hết — tránh trạng thái “nửa sống”. Rồi chạy mỗi server trong 1 goroutine, chờ <code>ctx.Done()</code> hoặc lỗi đầu tiên, sau đó tắt êm trong 10s.</td></tr>
+      <tr><td><code>spanName</code></td><td>Đặt tên span HTTP theo route pattern (<code>POST /api/auth/login</code>) thay vì URL thật — để Jaeger gom nhóm được.</td></tr>
+      <tr><td><code>httpSrv</code>, <code>grpcServer</code></td><td>Hai “adapter” cùng implement interface <code>server</code> (name/address/serve/shutdown) để <code>Run</code> đối xử như nhau. gRPC thử <code>GracefulStop</code>, quá hạn thì <code>Stop</code> cứng.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/ops/ops.go</span><span class="why">/healthz, /readyz, /metrics và đo HTTP</span></summary><div class="body">
+    <table>
+      <tr><td><code>Check</code></td><td>Một phụ thuộc cần kiểm (tên + hàm), ví dụ “database” → <code>pool.Ping</code>.</td></tr>
+      <tr><td><code>NewRegistry()</code></td><td>Tạo kho metric Prometheus, có sẵn metric runtime Go và process.</td></tr>
+      <tr><td><code>Handler(reg, checks...)</code></td><td>Mux cho cổng ops. <code>/readyz</code> chạy mọi check <b>song song</b> (mỗi cái tối đa 2s), lỗi bất kỳ → 503 kèm tên check hỏng.</td></tr>
+      <tr><td><code>HTTPMetrics(reg)</code></td><td>Middleware: bọc handler, đo thời gian, ghi lại status code (qua <code>statusRecorder</code>), rồi tăng <code>http_requests_total</code> và ghi <code>http_request_duration_seconds</code>. Dùng <code>r.Pattern</code> làm label để tránh “bùng nổ label” do ID trong URL.</td></tr>
+      <tr><td><code>Probe(ctx, url)</code></td><td>GET url, trả nil nếu 200.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/grpcx/grpcx.go</span><span class="why">Tạo gRPC server/client chuẩn: trace + metric + health</span></summary><div class="body">
+    <table>
+      <tr><td><code>NewServer(reg, opts...)</code></td><td>Tạo <code>grpc.Server</code> có: <code>otelgrpc</code> (trace), interceptor đếm <code>grpc_server_handled_total</code> + đo latency, và đăng ký sẵn dịch vụ <code>grpc.health.v1</code> báo SERVING.</td></tr>
+      <tr><td><code>Dial(target, opts...)</code></td><td>Tạo client connection có trace (otelgrpc client handler — chính nó gắn <code>traceparent</code>). Không TLS vì chỉ chạy trong mạng compose.</td></tr>
+    </table>
+    <div class="callout"><b class="t">Interceptor là gì?</b>Giống middleware của HTTP nhưng cho gRPC: một hàm bọc quanh handler, chạy trước/sau mỗi RPC. Dự án xếp chuỗi: metrics → Policy (auth) → handler thật.</div>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/tracing/tracing.go</span><span class="why">Cấu hình OpenTelemetry gửi trace tới Jaeger</span></summary><div class="body">
+    <p><code>Init(ctx, service)</code> tạo exporter OTLP/HTTP (đọc <code>OTEL_EXPORTER_OTLP_ENDPOINT</code>), TracerProvider gắn tên service, đặt propagator W3C. Trả về hàm <code>Shutdown</code> để xả nốt span khi tắt.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/logger/logger.go</span><span class="why">Log JSON có trace_id</span></summary><div class="body">
+    <p><code>New(service)</code> tạo <code>slog</code> JSON ra stdout, gắn <code>"service": name</code>. <code>traceHandler.Handle</code> là mẹo hay: nếu context có span, tự thêm <code>trace_id</code> + <code>span_id</code> vào dòng log → nối được log với trace trong Jaeger.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/auth/</span><span class="why">Kiểm JWT, lưu ai đang gọi trong context, chính sách theo RPC</span></summary><div class="body">
+    <h4>auth.go</h4>
+    <table>
+      <tr><td><code>Role</code></td><td><code>customer</code> / <code>seller</code> / <code>admin</code>.</td></tr>
+      <tr><td><code>ErrUnauthenticated</code> / <code>ErrKeysUnavailable</code></td><td>Phân biệt “vé sai” (→ 401) với “không tải được khoá, lỗi phía server” (→ 503).</td></tr>
+      <tr><td><code>WithClaims</code> / <code>FromContext</code> / <code>TokenFromContext</code></td><td>Cất và lấy “người gọi” + JWT gốc trong <code>context.Context</code> — cách Go truyền dữ liệu theo request.</td></tr>
+    </table>
+    <h4>keyset.go — <code>KeySet</code></h4>
+    <p>Bộ nhớ đệm JWKS. <code>Key(ctx, kid)</code>: có trong cache → trả ngay; không có → tải lại JWKS, nhưng <b>tối đa 1 lần/phút</b> (1 lần/giây nếu chưa có khoá nào). Nếu nhiều request cùng lúc thiếu khoá, chỉ 1 request tải (kênh <code>inflight</code>), số còn lại chờ. Tải lỗi thì giữ khoá cũ. <code>fetch</code> parse JSON, bỏ qua khoá hỏng.</p>
+    <h4>verifier.go — <code>Verifier.Verify(ctx, raw)</code></h4>
+    <p>Dùng <code>golang-jwt</code>: chỉ chấp nhận RS256, bắt buộc có <code>exp</code>, lấy <code>kid</code> trong header để tìm public key, rồi kiểm <code>role</code> hợp lệ và <code>sub</code> khác rỗng. Trả <code>Claims{AccountID, Role}</code>.</p>
+    <h4>grpc.go — <code>Policy</code></h4>
+<pre><code><span class="k">type</span> Policy <span class="k">struct</span> {
+    Public []<span class="k">string</span>             <span class="c">// RPC không cần vé (Login, Register, Import…)</span>
+    Roles  <span class="k">map</span>[<span class="k">string</span>][]Role    <span class="c">// RPC nào → role nào được gọi</span>
+}</code></pre>
+    <table>
+      <tr><td><code>authorize</code></td><td><b>Fail closed</b>: RPC không khai báo = cấm mọi người. Public → cho qua (có vé hợp lệ thì vẫn gắn claims). Không vé → <code>Unauthenticated</code>; sai role → <code>PermissionDenied</code>.</td></tr>
+      <tr><td><code>BearerToken(header)</code></td><td>Tách <code>"Bearer xxx"</code> → <code>xxx</code>, không phân biệt hoa thường.</td></tr>
+      <tr><td><code>UnaryInterceptor</code> / <code>StreamInterceptor</code></td><td>Gắn <code>authorize</code> vào gRPC server.</td></tr>
+      <tr><td><code>ForwardToken()</code></td><td>Interceptor phía <i>client</i>: lấy JWT trong ctx, gắn vào metadata <code>authorization</code> khi gateway gọi service → service <b>tự kiểm lại</b> (không tin mù gateway — “zero trust”).</td></tr>
+    </table>
+    <h4>authtest/</h4><p>Công cụ test: tạo khoá giả, ký token giả, dựng JWKS server giả.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/bootstrap/</span><span class="why">Bước khởi động có DB/Kafka</span></summary><div class="body">
+    <table>
+      <tr><td><code>Migrate(ctx, fs)</code></td><td>Đọc <code>DATABASE_URL</code>, gọi <code>dbmigrate.Up</code>.</td></tr>
+      <tr><td><code>OpenDB(ctx)</code></td><td>Tạo <code>pgxpool.Pool</code> (pool kết nối Postgres, chưa kết nối ngay).</td></tr>
+      <tr><td><code>DBCheck(pool)</code></td><td>Readiness check = <code>pool.Ping</code>.</td></tr>
+      <tr><td><code>KafkaCheck()</code></td><td>Đọc <code>KAFKA_BROKERS</code>, tạo client franz-go, check = <code>client.Ping</code>.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/dbmigrate/dbmigrate.go</span><span class="why">Chạy migration SQL lúc khởi động</span></summary><div class="body">
+    <p><code>Up(ctx, dsn, fsys)</code>: kiểm tên file (<code>checkNames</code> — sai mẫu <code>000001_x.up.sql</code> thì báo lỗi thay vì lặng lẽ bỏ qua), kết nối, dùng <code>golang-migrate</code> áp dụng các file chưa chạy. <code>ErrNoChange</code> được coi là OK. Bảng <code>schema_migrations</code> trong DB ghi lại đã chạy tới số mấy.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/config/config.go</span><span class="why">Đọc biến môi trường bắt buộc</span></summary><div class="body">
+    <p><code>Require(names...)</code> trả map giá trị; thiếu cái nào thì báo <i>tất cả</i> tên thiếu trong 1 lỗi.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/outbox · pkg/inbox · pkg/eventbus</span><span class="why">Gửi/nhận event an toàn (Story 2.1, 2.2)</span></summary><div class="body">
+    <p><b>Outbox</b> (AD-6): khi lưu đơn hàng, ghi luôn event vào bảng <code>outbox</code> trong <i>cùng transaction</i>; một relay đọc bảng này đẩy lên Kafka → không bao giờ “lưu DB xong mà mất event”. <b>Inbox</b> (AD-7): phía nhận ghi lại event đã xử lý để nhận trùng cũng không xử lý 2 lần. Mổ xẻ chi tiết ở mục <a href="#saga">Saga · Outbox · Inbox</a>.</p>
+  </div></details>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="hexagonal">
+  <h2>Hexagonal: bên trong một service</h2>
+  <p>Kiến trúc (file <code>ARCHITECTURE-SPINE.md</code>) quy định 5 tầng, mũi tên phụ thuộc chỉ hướng vào trong:</p>
+  <div class="hex">
+    <div class="l1"><b>internal/domain</b><small>Thực thể + luật nghiệp vụ thuần. Không import gì nội bộ. VD: <code>NewRegistration</code> kiểm email/mật khẩu.</small></div>
+    <div class="l2"><b>internal/service</b><small>Use case. <b>Định nghĩa interface (port)</b> mình cần: <code>AccountStore</code>, <code>Hasher</code>, <code>Issuer</code>.</small></div>
+    <div class="l3"><b>internal/repository</b><small>Adapter Postgres, implement port của service bằng SQL.</small></div>
+    <div class="l4"><b>internal/transport</b><small>Adapter gRPC/HTTP: chuyển proto ↔ domain, chuyển lỗi domain → mã gRPC.</small></div>
+    <div class="l5"><b>cmd/server/main.go</b><small>Chỉ “đấu dây”: tạo repo, service, transport và nối lại.</small></div>
+  </div>
+  <div class="callout ok"><b class="t">Lợi ích thấy ngay trong code</b>
+  <code>service.Accounts</code> chỉ biết interface <code>AccountStore</code>, nên test (<code>accounts_test.go</code>) truyền một store giả trong bộ nhớ — không cần Postgres. Đổi bcrypt sang argon2 chỉ cần viết adapter mới cho <code>Hasher</code>.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="identity">
+  <h2>identity-service — tài khoản và JWT</h2>
+  <p>Story 1.4 (đăng ký/đăng nhập) và 1.5 (seed 41 tài khoản demo). Đây là service hoàn chỉnh nhất để học hexagonal.</p>
+
+  <details class="file" open><summary><span class="pill go">Go</span><span class="path">cmd/server/main.go</span><span class="why">Đấu dây</span></summary><div class="body">
+<pre><code>app.Service{
+    Name: <span class="s">"identity-service"</span>, Migrations: migrations.FS, GRPC: <span class="k">true</span>,
+    Policy: auth.Policy{Public: []<span class="k">string</span>{Register, Login, ImportAccounts}},
+    Init: <span class="k">func</span>(ctx, pool) <span class="k">error</span> {           <span class="c">// chạy 1 lần</span>
+        repo := repository.<span class="f">New</span>(pool)
+        key = repo.<span class="f">SigningKey</span>(ctx, token.GenerateKey)   <span class="c">// lấy hoặc tạo khoá RSA</span>
+        accounts = service.<span class="f">NewAccounts</span>(repo, password.Bcrypt{}, token.<span class="f">NewIssuer</span>(key, time.Now), service.NewV7ID)
+    },
+    RegisterGRPC: <span class="c">// gắn IdentityService + IdentityAdminService</span>
+    API:          <span class="c">// chỉ GET /.well-known/jwks.json</span>
+}</code></pre>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/domain/account.go</span><span class="why">Luật: email, mật khẩu, role</span></summary><div class="body">
+    <table>
+      <tr><td><code>Account</code>, <code>Registration</code>, <code>Seed</code></td><td>Kiểu dữ liệu nghiệp vụ.</td></tr>
+      <tr><td><code>NormalizeEmail</code></td><td>trim + lowercase — email là khoá duy nhất.</td></tr>
+      <tr><td><code>NewRegistration</code></td><td>Chỉ cho tạo <b>Customer</b>; chặn domain <code>demo.olist.local</code> (dành cho tài khoản demo); kiểm mật khẩu.</td></tr>
+      <tr><td><code>parseEmail</code></td><td>≤254 byte, là địa chỉ thuần, domain có dấu chấm.</td></tr>
+      <tr><td><code>ValidatePassword</code></td><td>≥8 ký tự, ≤72 byte (giới hạn của bcrypt).</td></tr>
+      <tr><td><code>NewSeed</code></td><td>Kiểm tài khoản demo: id là uuid, email phải thuộc domain demo, role hợp lệ.</td></tr>
+      <tr><td><code>ErrBadCredentials</code></td><td>Một lỗi chung cho “sai email” và “sai mật khẩu” — không lộ email nào tồn tại.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/service/accounts.go · seeder.go</span><span class="why">Use case: Register, Login, ImportAccounts</span></summary><div class="body">
+    <table>
+      <tr><td><code>Register</code></td><td>validate → sinh id UUIDv7 → hash bcrypt → <code>CreateAccount</code> → <code>Issue</code> token.</td></tr>
+      <tr><td><code>Login</code></td><td>Tìm theo email → so bcrypt → phát token. Mẹo bảo mật: email không tồn tại vẫn so với <code>dummyHash</code> để thời gian phản hồi như nhau (chống dò email bằng đo thời gian — <i>timing attack</i>).</td></tr>
+      <tr><td><code>Seeder.ImportAccounts</code></td><td>Hash mật khẩu demo <b>một lần</b> cho cả lô rồi upsert.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/token/token.go</span><span class="why">Ký JWT RS256 và tạo JWKS</span></summary><div class="body">
+    <table>
+      <tr><td><code>TTL = 1h</code></td><td>Token sống 1 giờ, không có refresh token.</td></tr>
+      <tr><td><code>GenerateKey</code></td><td>RSA 2048 bit.</td></tr>
+      <tr><td><code>NewKey</code></td><td>Tính <code>kid</code> = SHA-256 thumbprint chuẩn RFC 7638 → cùng khoá luôn cùng kid.</td></tr>
+      <tr><td><code>Issuer.Issue(sub, role)</code></td><td>Tạo claims <code>{sub, role, iat, exp}</code>, header <code>kid</code>, ký bằng private key.</td></tr>
+      <tr><td><code>JWKS(keys...)</code></td><td>Xuất phần <i>public</i> (n, e) ra JSON.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/repository/postgres.go</span><span class="why">SQL cho account và signing_key</span></summary><div class="body">
+    <table>
+      <tr><td><code>CreateAccount</code></td><td>INSERT; bắt lỗi Postgres <code>23505</code> (unique) trên <code>account_email_key</code> → <code>ErrEmailTaken</code>.</td></tr>
+      <tr><td><code>AccountByEmail</code></td><td>SELECT theo email.</td></tr>
+      <tr><td><code>SigningKey</code></td><td>Trong transaction có <code>pg_advisory_xact_lock</code> (khoá toàn cục) để 2 bản identity khởi động cùng lúc không tạo 2 khoá khác nhau. Có khoá → dùng; chưa có → tạo và lưu dạng PKCS#8.</td></tr>
+      <tr><td><code>UpsertAccounts</code></td><td>Một câu SQL dùng <code>unnest</code> cho cả lô; <code>ON CONFLICT (id) DO UPDATE … WHERE</code> chỉ cập nhật tài khoản demo → không chiếm được tài khoản thật. Sai một dòng là huỷ cả lô.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/transport/grpc.go · admin.go · jwks.go</span><span class="why">Adapter gRPC + HTTP</span></summary><div class="body">
+    <p><code>identity</code> struct nhúng <code>UnimplementedIdentityServiceServer</code> (code sinh ra) và implement <code>Register</code>, <code>Login</code>. <code>toStatus</code> ánh xạ lỗi domain → mã gRPC:</p>
+    <table>
+      <tr><th>Lỗi domain</th><th>gRPC</th><th>Gateway đổi thành HTTP</th></tr>
+      <tr><td><code>ErrInvalid</code></td><td>InvalidArgument</td><td>400</td></tr>
+      <tr><td><code>ErrEmailTaken</code></td><td>AlreadyExists</td><td>409</td></tr>
+      <tr><td><code>ErrBadCredentials</code></td><td>Unauthenticated</td><td>401</td></tr>
+      <tr><td>lỗi khác</td><td>Internal (ẩn chi tiết, chỉ log)</td><td>500</td></tr>
+    </table>
+    <p><code>JWKSHandler</code> render JSON một lần lúc khởi động, trả kèm <code>Cache-Control: max-age=300</code>.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill sql">SQL</span><span class="path">migrations/000001_identity.up.sql</span><span class="why">Bảng account + signing_key</span></summary><div class="body">
+    <p><code>account(id uuid, email unique, password_hash, role CHECK IN (…), created_at)</code> — CHECK ép email đã lowercase. <code>signing_key(kid, private_key bytea)</code>. <code>migrations.go</code> nhúng các file bằng <code>//go:embed *</code> để binary tự mang theo SQL.</p>
+  </div></details>
+</section>
+
+<!-- ============================================================ -->
+<section id="gateway">
+  <h2>api-gateway — cửa chính</h2>
+  <p>Story 1.6. Không có DB. Chỉ có HTTP API (cổng 8080) + ops.</p>
+
+  <details class="file" open><summary><span class="pill go">Go</span><span class="path">cmd/server/main.go</span><span class="why">Mở kết nối gRPC tới 5 service</span></summary><div class="body">
+    <p><code>api()</code>: với mỗi upstream (<code>identity, catalog, order, payment, analytics</code>) gọi <code>grpcx.Dial(name+":9090", WithChainUnaryInterceptor(auth.ForwardToken()))</code>. Tạo <code>Verifier</code> từ JWKS. Trả <code>routing.New(...)</code> và hàm đóng mọi kết nối. Lưu ý: <code>shipping-simulator</code> không nằm trong danh sách — nó chỉ nói chuyện qua Kafka.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/routing/routing.go</span><span class="why">Bản đồ route + cổng kiểm role</span></summary><div class="body">
+    <table>
+      <tr><th>Role</th><th>Route được phép</th></tr>
+      <tr><td>customer</td><td><code>/api/checkout</code>, <code>/api/orders/…</code>, <code>/api/vouchers/{code}</code></td></tr>
+      <tr><td>seller</td><td><code>/api/seller/…</code></td></tr>
+      <tr><td>admin</td><td><code>/api/admin/…</code></td></tr>
+    </table>
+    <p><code>RequireRole(v, roles...)</code> là middleware: không có Bearer → 401; Verify lỗi → 401 (hoặc 503 nếu không tải được khoá); sai role → 403; đúng → gắn claims vào context và gọi tiếp. Hiện handler phía sau là <code>notYet</code> trả 404 vì nghiệp vụ chưa viết — CI kiểm đúng chuỗi 401 / 404 / 403 / 403.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/handler/auth.go</span><span class="why">POST /api/auth/register và /login</span></summary><div class="body">
+    <p><code>readCredentials</code> giới hạn body 4 KB (<code>MaxBytesReader</code>) rồi decode JSON. Gọi <code>identity.Register</code> (luôn với <code>ROLE_CUSTOMER</code>) hoặc <code>identity.Login</code> với timeout 5s. <code>writeToken</code> trả <code>{access_token, token_type, expires_in}</code>.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/handler/errors.go</span><span class="why">Đổi mã gRPC → HTTP</span></summary><div class="body">
+    <p>Bảng <code>httpErrors</code> (InvalidArgument→400, Unauthenticated→401, PermissionDenied→403, NotFound→404, AlreadyExists/FailedPrecondition→409, ResourceExhausted→429, Unavailable→503, DeadlineExceeded→504, còn lại 500). Body luôn có dạng <code>{"error":{"code","message"}}</code>. Lỗi 5xx bị thay message chung để không lộ chi tiết nội bộ.</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">internal/handler/grpchealth.go</span><span class="why">Route debug để thấy trace 2 tầng</span></summary><div class="body">
+    <p><code>GET /debug/grpc-health/{service}</code> gọi <code>grpc.health.v1.Check</code> của service đó. Dùng để kiểm tra thông mạng và minh hoạ trace trong Jaeger.</p>
+  </div></details>
+</section>
+
+<!-- ============================================================ -->
+<section id="catalog">
+  <h2>catalog-service và olist-importer</h2>
+  <p>Story 1.3. Dữ liệu tham chiếu (Category, Seller, Product) được nạp một lần từ CSV Kaggle.</p>
+  <div class="flow">
+    <div class="st"><b>make import</b>kiểm 6 file CSV trong data/</div><span class="ar">→</span>
+    <div class="st"><b>docker</b>tạo container importer, copy CSV vào /data</div><span class="ar">→</span>
+    <div class="st"><b>olist.Load</b>đọc CSV, chọn giá mới nhất</div><span class="ar">→</span>
+    <div class="st"><b>importer.Run</b>gửi theo lô qua gRPC</div><span class="ar">→</span>
+    <div class="st"><b>catalog</b>validate domain → upsert SQL</div><span class="ar">→</span>
+    <div class="st"><b>identity</b>ImportAccounts 41 tài khoản demo</div>
+  </div>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">services/catalog-service/…</span><span class="why">domain, service, repository, transport</span></summary><div class="body">
+    <table>
+      <tr><td><code>domain/catalog.go</code></td><td><code>NewCategory</code> (thiếu tên EN thì dùng PT), <code>NewSeller</code> (id 32 hex, bang 2 chữ cái), <code>NewProduct</code> (giá ≥ 0, không có danh mục → <code>Uncategorized</code>). Tiền là <b>int64 centavos</b> (không dùng float cho tiền!).</td></tr>
+      <tr><td><code>service/importer.go</code></td><td>Port <code>Repository</code> + 3 use case Import*, lô rỗng thì bỏ qua.</td></tr>
+      <tr><td><code>repository/postgres.go</code></td><td>Upsert theo lô bằng <code>unnest</code>. <code>display_name</code> = <code>"&lt;tên EN&gt; #&lt;4 ký tự id&gt;"</code> tính trong SQL; đổi tên danh mục thì đổi luôn tên sản phẩm.</td></tr>
+      <tr><td><code>transport/admin.go</code></td><td>Proto → domain (validate từng dòng) → importer; <code>ErrInvalid</code> → InvalidArgument.</td></tr>
+      <tr><td><code>migrations/000001_catalog.up.sql</code></td><td>Bảng <code>category</code>, <code>seller</code>, <code>product</code> có khoá ngoại + index theo category/seller.</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">tools/olist-importer/…</span><span class="why">Công cụ chạy theo yêu cầu</span></summary><div class="body">
+    <table>
+      <tr><td><code>main.go</code></td><td>Chỉ chấp nhận lệnh <code>import</code>. Đọc env <code>DATA_DIR</code>, <code>CATALOG_ADDR</code>, <code>IDENTITY_ADDR</code>, <code>DEMO_PASSWORD</code>. Có trace riêng tên <code>olist-importer</code>.</td></tr>
+      <tr><td><code>internal/olist/olist.go</code></td><td><code>Load</code> đọc CSV; <code>ParseCentavos("58.90")</code> → 5890; <code>latestItems</code> lấy giá của Order Item mới nhất cho mỗi sản phẩm.</td></tr>
+      <tr><td><code>internal/olist/demo.go</code></td><td><code>DemoAccounts</code> chọn 20 customer nhiều đơn nhất, 20 seller nhiều item nhất + 1 admin. <code>TopIDs</code> sắp xếp ổn định (count giảm, id tăng).</td></tr>
+      <tr><td><code>internal/importer/importer.go</code></td><td><code>Run</code>: Category → Seller → Product (vì Product tham chiếu 2 cái kia). <code>batches</code> chia lô để mỗi request dưới giới hạn 4 MB của gRPC.</td></tr>
+      <tr><td><code>internal/importer/accounts.go</code></td><td>Gọi <code>ImportAccounts</code> 1 lần với 41 tài khoản.</td></tr>
+    </table>
+    <div class="callout"><b class="t">Vì sao không ghi thẳng vào DB?</b>AD-2 + AD-12: mỗi DB chỉ có service chủ sở hữu được chạm vào. Importer đi qua admin gRPC nên mọi luật validate của domain vẫn được áp dụng.</div>
+  </div></details>
+</section>
+
+<!-- ============================================================ -->
+<section id="grpc">
+  <h2>proto/ và gRPC — từ hợp đồng tới code</h2>
+  <div class="flow">
+    <div class="st"><b>1. Viết</b>proto/identity/v1/identity.proto</div><span class="ar">→</span>
+    <div class="st"><b>2. make proto</b>buf generate · lint · breaking</div><span class="ar">→</span>
+    <div class="st"><b>3. Sinh ra</b>identity.pb.go (message) + identity_grpc.pb.go (client/server)</div><span class="ar">→</span>
+    <div class="st"><b>4. Server</b>implement interface, Register…Server</div><span class="ar">→</span>
+    <div class="st"><b>5. Client</b>NewIdentityServiceClient(conn).Login(…)</div>
+  </div>
+<pre><code><span class="k">service</span> IdentityService {
+  <span class="k">rpc</span> <span class="f">Register</span>(RegisterRequest) <span class="k">returns</span> (RegisterResponse);
+  <span class="k">rpc</span> <span class="f">Login</span>(LoginRequest) <span class="k">returns</span> (LoginResponse);
+}
+<span class="k">message</span> LoginRequest {
+  <span class="k">string</span> email = 1;      <span class="c">// số 1, 2 là "field number" — KHÔNG được đổi sau khi phát hành</span>
+  <span class="k">string</span> password = 2;
+}</code></pre>
+  <table>
+    <tr><th>File</th><th>Vai trò</th></tr>
+    <tr><td><code>proto/buf.yaml</code></td><td>Cấu hình <b>buf</b>: lint theo chuẩn STANDARD, breaking theo FILE (cấm thay đổi phá vỡ client cũ, như đổi field number).</td></tr>
+    <tr><td><code>proto/buf.gen.yaml</code></td><td>Plugin sinh code: <code>protoc-gen-go</code> (message) và <code>protoc-gen-go-grpc</code> (service), ra <code>gen/go</code>.</td></tr>
+    <tr><td><code>identity/v1/identity.proto</code></td><td>Register, Login, enum Role, message Token.</td></tr>
+    <tr><td><code>identity/v1/identity_admin.proto</code></td><td>ImportAccounts (nội bộ).</td></tr>
+    <tr><td><code>catalog/v1/catalog_admin.proto</code></td><td>ImportCategories / Sellers / Products.</td></tr>
+    <tr><td><code>catalog.proto</code>, <code>order</code>, <code>payment</code>, <code>analytics</code></td><td>Service rỗng — RPC sẽ thêm ở các story sau.</td></tr>
+    <tr><td><code>gen/go/**</code></td><td>Code sinh tự động, <b>không sửa tay</b>. CI kiểm “code sinh ra đã cập nhật” bằng cách sinh lại và so <code>git status</code>.</td></tr>
+  </table>
+  <div class="callout"><b class="t">Tên đầy đủ của RPC</b>Code sinh ra hằng <code>IdentityService_Login_FullMethodName = "/identity.v1.IdentityService/Login"</code>. <code>Policy</code> dùng đúng chuỗi này để quyết định ai được gọi.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="infra">
+  <h2>Docker, Postgres, Kafka</h2>
+  <details class="file" open><summary><span class="pill cfg">YAML</span><span class="path">deployments/docker-compose.yml</span><span class="why">Chạy cả hệ thống bằng <code>make up</code></span></summary><div class="body">
+    <table>
+      <tr><td><code>x-env</code>, <code>x-healthcheck</code>, <code>x-service</code></td><td>“Mẫu” YAML (anchor <code>&amp;</code>, dùng lại bằng <code>&lt;&lt;: *</code>) để không lặp cấu hình.</td></tr>
+      <tr><td>healthcheck <code>["/server","healthcheck"]</code></td><td>Docker gọi chính binary để thăm dò <code>/readyz</code>. <code>make up --wait</code> chờ tới khi tất cả “healthy”.</td></tr>
+      <tr><td><code>depends_on … service_healthy</code></td><td>Service đợi Postgres/Kafka sẵn sàng; gateway đợi các service.</td></tr>
+      <tr><td><code>DATABASE_URL</code></td><td>Mỗi service dùng user + DB riêng: <code>postgres://identity:…@postgres:5432/identity</code>.</td></tr>
+      <tr><td><code>profiles: ["tools"]</code></td><td>Importer không chạy khi <code>make up</code>, chỉ khi <code>make import</code>.</td></tr>
+      <tr><td><code>networks.default.name: olist</code></td><td>Tất cả chung mạng; gọi nhau bằng tên service (DNS của Docker).</td></tr>
+    </table>
+  </div></details>
+  <details class="file"><summary><span class="pill cfg">Docker</span><span class="path">services/*/Dockerfile</span><span class="why">Build 2 giai đoạn, image distroless</span></summary><div class="body">
+    <p>Giai đoạn 1 (<code>golang:alpine</code>): copy cả repo (cần <code>go.work</code> + <code>pkg</code>), build binary tĩnh <code>CGO_ENABLED=0</code>, có cache module. Giai đoạn 2 (<code>distroless/static:nonroot</code>): chỉ chứa binary — nhỏ, không shell, chạy user không phải root.</p>
+  </div></details>
+  <details class="file"><summary><span class="pill sql">Shell</span><span class="path">deployments/postgres/init/01-databases.sh · check-isolation.sh</span><span class="why">“Database per service” được ép bằng quyền</span></summary><div class="body">
+    <p>Init script tạo 6 role + 6 DB, mỗi DB thuộc role cùng tên, <code>REVOKE CONNECT … FROM PUBLIC</code>. Chỉ chạy lần đầu tạo volume (đổi mật khẩu thì <code>down -v</code>). <code>make check-db-isolation</code> thử mọi cặp user × DB: user chỉ vào được DB của chính nó.</p>
+  </div></details>
+  <details class="file"><summary><span class="pill cfg">YAML</span><span class="path">deployments/prometheus/ · grafana/</span><span class="why">Cấu hình quan sát</span></summary><div class="body">
+    <p>Xem mục <a href="#observability">Jaeger · Prometheus · Grafana</a>. Mỗi thư mục có Dockerfile chỉ copy file cấu hình vào image chính thức.</p>
+  </div></details>
+  <details class="file"><summary><span class="pill cfg">Make</span><span class="path">Makefile</span><span class="why">Lệnh tắt</span></summary><div class="body">
+    <table>
+      <tr><td><code>make build</code></td><td>Build 7 service vào <code>./bin</code>.</td></tr>
+      <tr><td><code>make test</code></td><td><code>go test ./...</code> mọi service + module chung.</td></tr>
+      <tr><td><code>make run-identity-service</code></td><td>Chạy 1 service bằng <code>go run</code> (cần tự đặt env).</td></tr>
+      <tr><td><code>make up</code> / <code>down</code></td><td>Bật/tắt toàn bộ compose.</td></tr>
+      <tr><td><code>make import</code></td><td>Nạp dữ liệu Olist + 41 tài khoản demo.</td></tr>
+      <tr><td><code>make proto</code></td><td>Sinh code + lint + kiểm breaking so với nhánh develop.</td></tr>
+      <tr><td><code>make tidy</code></td><td><code>go mod tidy</code> từng module.</td></tr>
+    </table>
+  </div></details>
+  <div class="callout"><b class="t">Kafka hiện làm gì?</b>Chạy ở chế độ KRaft (không cần Zookeeper), 1 node. order/payment/shipping/analytics có <code>UsesKafka: true</code> → readiness kiểm <code>client.Ping</code>. Từ Epic 2, service bật <code>Outbox: true</code> có relay đẩy event lên Kafka, và consumer đọc qua <code>pkg/inbox</code> — xem <a href="#saga">Saga · Outbox · Inbox</a>.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="saga">
+  <h2>Saga, Outbox, Inbox — khi service nói chuyện bằng sự kiện</h2>
+  <p class="lede">Ba khái niệm này đi cùng nhau. <b>Saga</b> là <i>kịch bản nghiệp vụ</i> trải qua nhiều service. <b>Outbox</b> đảm bảo phía gửi <i>không làm mất</i> sự kiện. <b>Inbox</b> đảm bảo phía nhận <i>không xử lý 2 lần</i>. Kafka là đường ống ở giữa.</p>
+
+  <h3>Vấn đề gốc: không có transaction chung giữa 2 database</h3>
+  <p>Trong ứng dụng 1 khối (monolith), “trừ voucher + chuyển đơn sang approved” nằm trong 1 transaction: hoặc cả hai xảy ra, hoặc không gì cả. Ở đây order-service và payment-service có <b>DB riêng</b> (AD-2) — không có <code>BEGIN … COMMIT</code> nào bao được cả hai. Vì vậy ta cần:</p>
+  <div class="grid">
+    <div class="card"><span class="pill go">Saga</span><h4>Chia thành nhiều bước nhỏ</h4>Mỗi bước là 1 transaction cục bộ trong 1 service. Bước sau hỏng thì chạy <b>bước bù</b> (compensation) để hoàn tác bước trước.</div>
+    <div class="card"><span class="pill sql">Outbox</span><h4>Gửi tin chắc chắn</h4>Lưu dữ liệu và “thư cần gửi” trong <b>cùng 1 transaction</b>. Một relay gửi thư lên Kafka sau.</div>
+    <div class="card"><span class="pill cfg">Inbox</span><h4>Nhận tin đúng 1 lần</h4>Kafka có thể giao lại 1 tin nhiều lần. Phía nhận ghi sổ <code>event_id</code> đã xử lý để bỏ qua bản trùng.</div>
+  </div>
+
+  <!-- ---------------- SAGA ---------------- -->
+  <h3 id="saga-what">1. Saga là gì?</h3>
+  <div class="callout analogy"><b class="t">Ví dụ đời thường: đặt tour du lịch</b>Công ty du lịch (nhạc trưởng) đặt vé máy bay → đặt khách sạn → thu tiền. Nếu khách sạn hết phòng, công ty không “rollback” được hãng bay — họ phải <b>gọi huỷ vé</b>. Hành động “huỷ vé” đó chính là <b>bước bù</b>. Saga = chuỗi bước + bước bù cho mỗi bước có thể thất bại.</div>
+
+  <div class="tablewrap"><table>
+    <tr><th>Kiểu saga</th><th>Cách chạy</th><th>Dự án này</th></tr>
+    <tr><td><b>Orchestration</b> (nhạc trưởng)</td><td>1 service điều phối: gửi <i>lệnh</i> (command) cho service khác và chờ <i>trả lời</i> (event).</td><td><b>Dùng cái này.</b> order-service là nhạc trưởng (AD-4). Lệnh <code>AuthorizePayment</code> đi trên <code>payment.commands</code>, trả lời <code>PaymentSucceeded</code>/<code>PaymentFailed</code> trên <code>payment.events</code>.</td></tr>
+    <tr><td><b>Choreography</b> (tự nhảy)</td><td>Không ai điều phối; mỗi service nghe event và tự quyết bước tiếp theo.</td><td>Không dùng cho thanh toán. Dễ khó theo dõi “saga đang ở đâu”.</td></tr>
+  </table></div>
+
+  <h4>Máy trạng thái của Order (AD-5)</h4>
+  <p>Chỉ order-service được đổi trạng thái Order. Các bước chuyển hợp lệ:</p>
+  <div class="diagram">
+    <svg viewBox="0 0 900 190" role="img" aria-label="Trạng thái Order: created → approved → processing → shipped → delivered; created → canceled">
+      <defs><marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
+      <g class="sm"><rect x="10" y="30" width="130" height="50" rx="25" style="fill:var(--accent-soft)"/><text x="75" y="60" text-anchor="middle">created</text></g>
+      <g class="sm"><rect x="190" y="30" width="130" height="50" rx="25" style="fill:var(--go-soft)"/><text x="255" y="60" text-anchor="middle">approved</text></g>
+      <g class="sm"><rect x="370" y="30" width="140" height="50" rx="25" style="fill:var(--go-soft)"/><text x="440" y="60" text-anchor="middle">processing</text></g>
+      <g class="sm"><rect x="560" y="30" width="130" height="50" rx="25" style="fill:var(--go-soft)"/><text x="625" y="60" text-anchor="middle">shipped</text></g>
+      <g class="sm"><rect x="740" y="30" width="140" height="50" rx="25" style="fill:var(--ok-soft)"/><text x="810" y="60" text-anchor="middle">delivered</text></g>
+      <g class="sm"><rect x="10" y="130" width="130" height="50" rx="25" style="fill:var(--red-soft)"/><text x="75" y="160" text-anchor="middle">canceled</text></g>
+      <path class="edge" d="M140,55 L188,55" marker-end="url(#arr2)"/>
+      <path class="edge" d="M320,55 L368,55" marker-end="url(#arr2)"/>
+      <path class="edge" d="M510,55 L558,55" marker-end="url(#arr2)"/>
+      <path class="edge" d="M690,55 L738,55" marker-end="url(#arr2)"/>
+      <path class="edge" d="M75,80 L75,128" marker-end="url(#arr2)"/>
+      <text class="elabel" x="146" y="22">PaymentSucceeded (cùng 1 transaction)</text>
+      <text class="elabel" x="560" y="22">shipping (Epic 3)</text>
+      <text class="elabel" x="86" y="110">PaymentFailed → bước bù</text>
+    </svg>
+  </div>
+
+  <h4>Chạy thử saga thanh toán — chọn kịch bản</h4>
+  <div class="controls" id="sagaTabs" style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px">
+    <button class="btn primary" type="button" data-s="ok">✅ Thẻ được duyệt</button>
+    <button class="btn" type="button" data-s="fail">❌ Thẻ bị từ chối</button>
+    <button class="btn" type="button" data-s="down">💥 payment-service đang sập</button>
+  </div>
+  <div class="steptext" id="sagaText"></div>
+
+  <div class="callout warn"><b class="t">Trạng thái code hiện tại</b>Story 2.1 (outbox) và 2.2 (inbox) đã có code trong <code>pkg/</code>; Story 2.3 (Checkout) đã dùng outbox để ghi <code>OrderCreated</code>. Còn saga thanh toán (Story 2.7 <code>PayOrder</code>, 2.8 duyệt, 2.9 bước bù) vẫn ở <b>backlog</b> — kịch bản trên là thiết kế trong <code>epics.md</code> / AD-4, chưa phải code đang chạy. Lưu ý: <b>Checkout không khởi động saga</b>; saga chỉ bắt đầu khi khách bấm Pay.</div>
+
+  <!-- ---------------- OUTBOX ---------------- -->
+  <h3 id="outbox-what">2. Transactional Outbox (AD-6)</h3>
+  <p>Bài toán “<b>ghi 2 nơi</b>” (dual write): muốn vừa lưu Order vào Postgres, vừa gửi <code>OrderCreated</code> lên Kafka. Hai cách ngây thơ đều sai:</p>
+  <div class="tablewrap"><table>
+    <tr><th>Cách làm</th><th>Sự cố</th><th>Hậu quả</th></tr>
+    <tr><td>COMMIT DB rồi mới gửi Kafka</td><td>Service crash ngay sau COMMIT, hoặc Kafka đang sập</td><td>Order có trong DB nhưng <b>không ai biết</b> — event bị mất.</td></tr>
+    <tr><td>Gửi Kafka rồi mới COMMIT DB</td><td>COMMIT thất bại (vi phạm ràng buộc, mất kết nối)</td><td>Service khác nhận event về 1 Order <b>không tồn tại</b> — “event ma”.</td></tr>
+  </table></div>
+  <div class="callout analogy"><b class="t">Ví dụ đời thường: khay thư đi</b>Thay vì vừa ký hợp đồng vừa chạy ra bưu điện, thư ký đặt bản sao thư vào <b>khay “thư đi”</b> ngay trong lúc ký (cùng 1 hành động). Người đưa thư cứ vài phút ghé lấy thư trong khay mang đi. Hợp đồng không ký → không có thư trong khay. Người đưa thư ốm → thư vẫn nằm đó, mai gửi.</div>
+  <p>Trong code: bảng <code>outbox</code> chính là khay thư, và <b>Relay</b> là người đưa thư.</p>
+
+  <details class="file" open><summary><span class="pill sql">SQL</span><span class="path">pkg/outbox/schema.sql</span><span class="why">Khay thư đi</span></summary><div class="body">
+<pre><code>CREATE TABLE outbox (
+    seq         bigserial PRIMARY KEY,   <span class="c">-- số thứ tự tăng dần: gửi theo đúng thứ tự này</span>
+    event_id    uuid NOT NULL UNIQUE,    <span class="c">-- id duy nhất, phía nhận dùng để chống trùng</span>
+    topic       text NOT NULL,           <span class="c">-- vd. order.events</span>
+    envelope    jsonb NOT NULL,          <span class="c">-- toàn bộ “phong bì” event</span>
+    traceparent text NOT NULL,           <span class="c">-- nối trace Jaeger qua Kafka</span>
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    sent_at     timestamptz              <span class="c">-- NULL = chưa gửi</span>
+);
+CREATE INDEX outbox_unsent_idx ON outbox (seq) WHERE sent_at IS NULL;
+CREATE TABLE outbox_relay_lock (id int PRIMARY KEY CHECK (id = 1));  <span class="c">-- 1 dòng duy nhất làm “khoá”</span></code></pre>
+    <p>Mỗi service gửi event copy file này vào <code>migrations/</code> của mình (test đảm bảo 2 bản giống hệt nhau).</p>
+  </div></details>
+
+  <details class="file" open><summary><span class="pill go">Go</span><span class="path">pkg/outbox/outbox.go</span><span class="why">Write + Relay</span></summary><div class="body">
+    <table>
+      <tr><td><code>Write(ctx, tx, ev, meta)</code></td><td>Hàm <b>duy nhất</b> để phát event. Nhận <code>tx</code> — transaction của use case — nên event chỉ tồn tại khi dữ liệu commit. Bọc event vào envelope (<code>eventbus.New</code>), rồi <code>INSERT INTO outbox</code>. Event type không có trong <code>contracts/events/v1</code> → lỗi <code>ErrUnknownType</code>.</td></tr>
+      <tr><td><code>PollInterval()</code></td><td>Đọc env <code>OUTBOX_POLL_INTERVAL</code>, mặc định 200ms, chỉ chấp nhận 10ms–200ms.</td></tr>
+      <tr><td><code>NewRelay(...)</code></td><td>Tạo relay + gauge Prometheus <code>outbox_unsent_rows</code> (NaN cho tới lần đếm đầu).</td></tr>
+      <tr><td><code>Relay.Run(ctx)</code></td><td>Vòng lặp: mỗi tick gọi <code>tick</code>. Khi service tắt, <b>flush thêm 1 lần</b> (tối đa 5s) để không bỏ sót dòng vừa commit. Tick lỗi chỉ log, tick sau thử lại — không bao giờ bỏ dòng.</td></tr>
+      <tr><td><code>tick</code> → <code>count</code></td><td>Đếm <code>sent_at IS NULL</code> trước và sau khi gửi → gauge cho thấy hàng tồn khi Kafka sập.</td></tr>
+      <tr><td><code>publish</code></td><td>Trong 1 transaction:<br>① <code>SELECT … FROM outbox_relay_lock FOR UPDATE SKIP LOCKED</code> — nếu instance khác đang giữ khoá thì <b>bỏ qua cả tick</b> (chỉ để chặn instance thứ 2, không để chạy song song).<br>② Lấy tối đa 100 dòng <code>WHERE sent_at IS NULL ORDER BY seq</code>.<br>③ <code>ProduceSync</code> lên Kafka (timeout 10s).<br>④ <code>UPDATE outbox SET sent_at = now()</code> cho các <code>seq</code> đó.</td></tr>
+    </table>
+    <div class="callout"><b class="t">Vì sao “ít nhất 1 lần” (at-least-once)?</b>Nếu Kafka nhận xong ở bước ③ nhưng service crash trước bước ④, dòng vẫn <code>sent_at IS NULL</code> → tick sau gửi lại. Event có thể đến <b>2 lần</b>, nhưng <b>không bao giờ mất</b>. Bản trùng do Inbox lo.</div>
+    <div class="callout"><b class="t">Vì sao không nhớ “đã gửi tới seq bao nhiêu”?</b>Hai transaction song song: T1 lấy seq=7, T2 lấy seq=8; T2 commit trước. Nếu relay nhớ “đã tới 8” thì sẽ bỏ sót 7 khi T1 commit sau. Luôn hỏi lại <code>sent_at IS NULL</code> nên seq 7 vẫn được gửi.</div>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">Nơi dùng outbox hiện nay</span><span class="why">app.go + order-service</span></summary><div class="body">
+    <p><code>pkg/app/app.go</code>: service khai báo <code>app.Service{Outbox: true}</code> thì <code>app.Run</code> tạo Kafka producer (<code>eventbus.NewProducer</code>, idempotent, <code>acks=all</code>), tạo Relay, đăng ký metric và chạy relay trong goroutine riêng.</p>
+    <p><code>services/order-service/internal/repository/postgres.go</code> → <code>CreateCheckout</code>: trong <b>1 transaction</b> ghi <code>checkouts</code>, mọi Order, Order Item, timeline và gọi <code>outbox.Write(... OrderCreated ...)</code> cho từng Order. Lỗi ở bất kỳ đâu → rollback hết, không có event nào.</p>
+<pre><code>pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+    <span class="c">// ... INSERT checkouts, orders, items ...</span>
+    ev := eventsv1.OrderCreated{ToStatus: "created", Order: Snapshot(o)}
+    return outbox.Write(ctx, tx, ev, eventbus.Meta{OccurredAt: o.PurchasedAt})
+})</code></pre>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">contracts/events/v1 · pkg/eventbus</span><span class="why">Phong bì chung cho mọi event (AD-8, AD-9)</span></summary><div class="body">
+    <p>Mọi message trên Kafka là 1 <b>Envelope</b> JSON: <code>event_id, event_type, event_version, aggregate_id, historical, occurred_at, published_at, origin_published_at, traceparent, payload</code>. <code>aggregate_id</code> = <code>order_id</code> và cũng là <b>partition key</b> → mọi event của 1 Order nằm cùng partition, nên đến đúng thứ tự.</p>
+    <p>Topic: sự kiện (fact) trên <code>&lt;nguồn&gt;.events</code> (<code>order.events</code>, <code>payment.events</code>, <code>shipping.events</code>); lệnh (command) trên <code>&lt;đích&gt;.commands</code> (<code>payment.commands</code>); thêm <code>replay.orders</code> cho dữ liệu lịch sử. Chỉ các kiểu event khai báo trong <code>contracts/events/v1</code> mới được gửi.</p>
+  </div></details>
+
+  <!-- ---------------- INBOX ---------------- -->
+  <h3 id="inbox-what">3. Idempotent Inbox (AD-7)</h3>
+  <div class="callout analogy"><b class="t">Ví dụ đời thường: sổ ký nhận</b>Bưu tá có thể giao 1 bưu phẩm 2 lần (lần đầu không chắc bạn đã nhận). Lễ tân tra <b>sổ ký nhận</b> theo mã vận đơn: đã có → “cảm ơn, nhận rồi”, không mở hộp lần nữa. Ghi sổ và mở hộp xảy ra <b>cùng lúc</b>, không thể có chuyện ghi sổ mà chưa mở.</div>
+
+  <details class="file" open><summary><span class="pill sql">SQL</span><span class="path">pkg/inbox/schema.sql</span><span class="why">Sổ ký nhận</span></summary><div class="body">
+<pre><code>CREATE TABLE processed_events (
+    consumer     text NOT NULL,   <span class="c">-- tên consumer group</span>
+    event_id     uuid NOT NULL,
+    event_type   text NOT NULL,
+    outcome      text NOT NULL CHECK (outcome IN ('applied', 'rejected')),
+    reason       text NOT NULL DEFAULT '',
+    processed_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (consumer, event_id)   <span class="c">-- chìa khoá chống trùng</span>
+);</code></pre>
+  </div></details>
+
+  <h4>4 kết cục của một message</h4>
+  <div class="tablewrap"><table>
+    <tr><th>Outcome</th><th>Khi nào</th><th>Xử lý</th></tr>
+    <tr><td><span class="pill cfg">applied</span></td><td>Handler chạy thành công. (Cũng dùng cho <code>event_type</code> lạ trên topic dùng chung → bỏ qua êm.)</td><td>Thay đổi + dòng <code>processed_events</code> commit cùng nhau; commit offset Kafka.</td></tr>
+    <tr><td><span class="pill go">duplicate</span></td><td><code>INSERT … ON CONFLICT DO NOTHING</code> ảnh hưởng 0 dòng — đã xử lý trước đó.</td><td>Không làm gì; commit offset.</td></tr>
+    <tr><td><span class="pill sql">rejected</span></td><td>Dữ liệu sai nghiệp vụ (handler trả <code>inbox.Reject("…")</code>), không giải mã được, hoặc sai major version.</td><td>Rollback thay đổi, ghi dòng <code>rejected</code> kèm lý do, đếm metric, <b>không thử lại</b>.</td></tr>
+    <tr><td><span class="pill todo">retryable</span></td><td>Lỗi hạ tầng (DB rớt, timeout…) hoặc handler <code>panic</code>.</td><td>Thử lại tại chỗ với backoff 100ms → 200ms → … tối đa 5s; quá <code>INBOX_MAX_ATTEMPTS</code> (mặc định 5) thì <b>đỗ vào DLQ</b> <code>&lt;topic&gt;.dlq</code> và đi tiếp.</td></tr>
+  </table></div>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/inbox/inbox.go</span><span class="why">Consumer, Handle, process, attempt</span></summary><div class="body">
+    <table>
+      <tr><td><code>NewConsumer(group, topics...)</code></td><td>1 consumer group Kafka. Tên group cũng là cột <code>consumer</code> trong sổ.</td></tr>
+      <tr><td><code>Handle[T](c, fn)</code></td><td>Generic: đăng ký hàm xử lý cho kiểu event <code>T</code>. Tự giải mã payload JSON thành <code>T</code>. Kiểu không có trong catalog → panic lúc khởi động (bắt lỗi sớm).</td></tr>
+      <tr><td><code>DropHistorical()</code></td><td>Biến consumer thành “process reactor” (payment, shipping): bỏ qua event <code>historical=true</code> từ dữ liệu replay, để dữ liệu cũ không kích hoạt thanh toán thật (AD-13).</td></tr>
+      <tr><td><code>process</code></td><td>Mở span Jaeger từ header <code>traceparent</code> <b>trước mọi bộ lọc</b> → trace nối liền từ người gửi qua Kafka. Vòng lặp gọi <code>attempt</code>, ngủ backoff, rồi <code>park</code> vào DLQ.</td></tr>
+      <tr><td><code>attempt</code></td><td>Kiểm envelope → tìm handler → kiểm version → trong 1 transaction: <code>INSERT processed_events … ON CONFLICT DO NOTHING</code>; nếu chèn được thì chạy handler. Handler lỗi → transaction rollback, kể cả dòng sổ.</td></tr>
+      <tr><td><code>safeApply</code></td><td><code>recover()</code> panic của handler thành lỗi retryable — 1 message xấu không làm service crash liên tục.</td></tr>
+      <tr><td><code>reject</code></td><td>Ghi dòng <code>rejected</code> trong transaction riêng (vì transaction chính đã rollback).</td></tr>
+    </table>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/inbox/run.go</span><span class="why">Vòng lặp đọc Kafka</span></summary><div class="body">
+    <p><code>Consumer.Run</code>: đọc <b>1 record mỗi lần</b>, xử lý tới kết cục cuối cùng rồi mới <code>CommitRecords</code> (tắt auto-commit). Group mới đọc từ <b>đầu topic</b> (<code>AtStart</code>) để không lỡ event cũ. <code>BlockRebalanceOnPoll</code> đảm bảo không bị chia lại partition giữa lúc xử lý và commit. Đang thử lại mà service tắt → không commit → lần sau Kafka giao lại (và inbox coi là bản trùng nếu đã áp dụng).</p>
+  </div></details>
+
+  <details class="file"><summary><span class="pill go">Go</span><span class="path">pkg/inbox/dlq.go · tools/dlq-redrive</span><span class="why">Hàng đợi “thư chết” và gửi lại</span></summary><div class="body">
+    <p><b>DLQ</b> (dead-letter queue) = chỗ đỗ message thử mãi không được, để partition không bị kẹt. Bản đỗ mang header <code>dlq-reason</code>, <code>dlq-attempts</code>, <code>dlq-consumer</code>.</p>
+    <table>
+      <tr><td><code>WatchDLQDepth</code></td><td>Định kỳ cập nhật metric <code>inbox_dlq_depth{topic}</code> = số message trong DLQ chưa được gửi lại.</td></tr>
+      <tr><td><code>Redrive(topic)</code></td><td>Copy message từ <code>&lt;topic&gt;.dlq</code> về lại <code>topic</code> (bỏ header dlq-*). An toàn vì consumer idempotent. Chạy bằng <code>make dlq-redrive TOPIC=order.events</code>.</td></tr>
+      <tr><td><code>NonEmptyDLQs</code></td><td>Dùng bởi <code>make dlq-check</code>: script demo thất bại nếu DLQ nào còn message.</td></tr>
+    </table>
+    <div class="callout warn"><b class="t">Cẩn thận khi redrive</b>Message gửi lại sẽ đến <i>sau</i> các event mới hơn của cùng Order. Hãy đọc <code>dlq-reason</code> và sửa nguyên nhân trước khi redrive.</div>
+  </div></details>
+
+  <h3>Xem tận mắt</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Muốn thấy</th><th>Ở đâu</th></tr>
+    <tr><td>Event đã lên Kafka</td><td>Kafka UI <a href="http://localhost:8081" target="_blank" rel="noopener">localhost:8081</a> → topic <code>order.events</code> (sau khi Checkout).</td></tr>
+    <tr><td>Hàng chờ trong outbox</td><td>PromQL <code>outbox_unsent_rows</code> — tăng khi tắt Kafka, về 0 khi bật lại.</td></tr>
+    <tr><td>Kết cục từng message</td><td>PromQL <code>sum by (outcome) (inbox_messages_total)</code> (applied/duplicate/rejected/retryable), <code>inbox_dlq_parked_total</code>, <code>inbox_dlq_depth</code>.</td></tr>
+    <tr><td>1 trace xuyên Kafka</td><td>Jaeger: span <code>consume order.events</code> nằm dưới trace của request đã gửi event (nhờ <code>traceparent</code>).</td></tr>
+    <tr><td>Sổ chống trùng</td><td><code>SELECT * FROM processed_events</code> trong DB của service consumer.</td></tr>
+  </table></div>
+</section>
+
+<script>
+(function () {
+  var S = {
+    ok: [
+      ['Khách bấm Pay', 'Trình duyệt → gateway <code>POST /api/orders/:id/pay</code> → gRPC <code>OrderService.PayOrder</code> (Story 2.7).'],
+      ['order-service: bước 1 (1 transaction)', 'Khoá dòng Order (<code>SELECT … FOR UPDATE</code>), kiểm chủ sở hữu và trạng thái <code>created</code>. Ghi <code>payment_requests(idempotency_key, …)</code> + <b>outbox</b> <code>AuthorizePayment</code>. Trả “accepted” ngay — Order vẫn <code>created</code>.'],
+      ['Relay → Kafka', 'Relay của order-service đẩy lệnh lên topic <code>payment.commands</code>, key = <code>order_id</code>.'],
+      ['payment-service: bước 2 (1 transaction)', 'Inbox ghi sổ <code>event_id</code>. Trừ voucher bằng 1 câu UPDATE có điều kiện (<code>WHERE used_by_order IS NULL</code>), quẹt thẻ giả lập → duyệt. Ghi Payment + <b>outbox</b> <code>PaymentSucceeded</code> (Story 2.8).'],
+      ['Relay → Kafka', '<code>PaymentSucceeded</code> lên <code>payment.events</code>.'],
+      ['order-service: bước 3 (1 transaction)', 'Inbox ghi sổ. Order <code>created → approved → processing</code>, thêm 2 dòng timeline, ghi outbox <code>OrderApproved</code> rồi <code>OrderProcessing</code>.'],
+      ['Web thấy kết quả', 'Trang đơn hàng poll mỗi 1s, thấy <code>processing</code> → toast “Payment approved.”']
+    ],
+    fail: [
+      ['Bước 1–3 giống kịch bản thành công', 'PayOrder ghi outbox <code>AuthorizePayment</code>, relay đẩy lên <code>payment.commands</code>.'],
+      ['payment-service: trừ voucher', 'UPDATE có điều kiện trừ voucher thành công cho Order này.'],
+      ['Thẻ bị từ chối', 'Thẻ test “declines” hoặc tỉ lệ từ chối 100%.'],
+      ['Bước bù tại payment-service', 'Trả lại voucher: <code>SET used_by_order = NULL WHERE code = $code AND used_by_order = $order</code>. Ghi Payment <code>failed</code> + outbox <code>PaymentFailed{reason: CARD_DECLINED, voucher_restored: true}</code> (Story 2.9).'],
+      ['Bước bù tại order-service', 'Inbox nhận <code>PaymentFailed</code> → Order <code>created → canceled</code>, lưu <code>cancel_reason</code> và <code>voucher_restored</code>, ghi outbox <code>OrderCanceled</code>.'],
+      ['Kết quả', 'Toast “Card declined. Order canceled. Voucher restored.” Voucher dùng lại được cho đơn khác. Không có trạng thái “treo” ở <code>created</code>.'],
+      ['Biến thể: voucher đã bị dùng', 'UPDATE trừ voucher đổi 0 dòng → không quẹt thẻ, phát <code>PaymentFailed{VOUCHER_UNAVAILABLE, voucher_restored: false}</code> → Order <code>canceled</code>.']
+    ],
+    down: [
+      ['payment-service bị tắt', 'Demo Story 2.11: <code>docker compose stop payment-service</code>.'],
+      ['Khách vẫn bấm Pay được', 'PayOrder chỉ ghi DB của order-service + outbox → trả “accepted”. Không gọi trực tiếp payment-service nên không lỗi.'],
+      ['Lệnh nằm chờ trong Kafka', 'Relay đẩy <code>AuthorizePayment</code> lên <code>payment.commands</code>. Không ai đọc — message nằm yên, không mất.'],
+      ['payment-service bật lại', 'Consumer group đọc tiếp từ offset chưa commit → xử lý mọi lệnh đang chờ.'],
+      ['Nếu bị giao trùng', 'Inbox thấy <code>event_id</code> đã có → <code>duplicate</code>, không quẹt thẻ lần 2. Thêm <code>UNIQUE(order_id)</code> trên bảng Payment làm chốt chặn thứ hai.'],
+      ['Kết quả', 'Mọi Order đã trả tiền đều rời <code>created</code> (sang <code>processing</code> hoặc <code>canceled</code>). Script demo báo lỗi nếu còn đơn kẹt hoặc DLQ còn message.']
+    ]
+  };
+  var tabs = document.getElementById('sagaTabs');
+  var box = document.getElementById('sagaText');
+  function show(k) {
+    box.innerHTML = '<ol style="margin:0;padding-left:1.3em">' + S[k].map(function (s) {
+      return '<li style="margin:0 0 8px"><b>' + s[0] + '.</b> ' + s[1] + '</li>';
+    }).join('') + '</ol>';
+    Array.prototype.forEach.call(tabs.querySelectorAll('button'), function (b) {
+      b.classList.toggle('primary', b.getAttribute('data-s') === k);
+    });
+  }
+  tabs.addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (b) show(b.getAttribute('data-s'));
+  });
+  show('ok');
+})();
+</script>
+
+<!-- ============================================================ -->
+<section id="web">
+  <h2>web/ — React + Vite</h2>
+  <p>Story 1.7, đang làm. <code>npm run dev</code> chạy Vite; mọi request <code>/api</code> được proxy tới gateway <code>127.0.0.1:8080</code> (<code>vite.config.ts</code>), nên trình duyệt thấy cùng origin, không vướng CORS.</p>
+  <div class="tablewrap"><table>
+    <tr><th>File</th><th>Làm gì</th></tr>
+    <tr><td><code>src/main.tsx</code></td><td>Gắn <code>&lt;App/&gt;</code> vào <code>#root</code>.</td></tr>
+    <tr><td><code>src/App.tsx</code></td><td>Router: route công khai (/, /login, /register) và 3 nhóm bọc trong <code>&lt;RequireRole role=…&gt;</code>. Các trang nghiệp vụ hiện là <code>Placeholder</code>.</td></tr>
+    <tr><td><code>src/lib/api.ts</code></td><td><code>apiFetch</code>: gắn <code>Authorization: Bearer</code>, parse lỗi <code>{"error":{code,message}}</code> thành <code>ApiError</code>; gặp 401 → gọi handler đăng xuất.</td></tr>
+    <tr><td><code>src/lib/session.ts</code></td><td>Lưu token trong <code>sessionStorage</code> (mất khi đóng tab). <code>decodeClaims</code> đọc payload JWT <b>không kiểm chữ ký</b> — chỉ để biết role/exp; việc kiểm thật là của gateway.</td></tr>
+    <tr><td><code>src/session/SessionContext.tsx</code></td><td>React Context giữ session; tự hết hạn khi tới <code>exp</code> hoặc gặp 401 → chuyển tới <code>/login?next=…&amp;expired=1</code>.</td></tr>
+    <tr><td><code>src/lib/routes.ts</code></td><td><code>homeFor(role)</code>, <code>canOpen</code>, <code>safeReturn</code> — chống “open redirect” (chỉ cho quay lại đường dẫn nội bộ hợp lệ).</td></tr>
+    <tr><td><code>src/components/RequireRole.tsx</code></td><td>Chưa đăng nhập → Login; sai role → trang NoAccess. Chú thích ghi rõ: gateway mới là người gác thật.</td></tr>
+    <tr><td><code>src/pages/AuthForm.tsx</code>, <code>Login.tsx</code>, <code>Register.tsx</code></td><td>Form email/mật khẩu dùng chung, gọi <code>/api/auth/login|register</code>.</td></tr>
+    <tr><td><code>src/lib/money.ts</code></td><td><code>formatCentavos(123456)</code> → <code>"R$ 1.234,56"</code> bằng số nguyên.</td></tr>
+    <tr><td><code>src/components/ui/*</code></td><td>Component shadcn/ui (Button, Card, Input…).</td></tr>
+    <tr><td><code>src/test/*</code>, <code>*.test.ts(x)</code></td><td>Vitest + Testing Library; <code>gateway.ts</code> giả lập gateway, <code>jwt.ts</code> tạo token giả.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="test-ci">
+  <h2>Test và CI</h2>
+  <h3>Các loại test trong repo</h3>
+  <div class="grid">
+    <div class="card"><span class="pill go">unit</span><h4>*_test.go cạnh code</h4>Test domain, service với port giả. Chạy nhanh, không cần Docker.</div>
+    <div class="card"><span class="pill sql">integration</span><h4>Cần Postgres thật</h4>Bật khi có <code>DBMIGRATE_TEST_DSN</code>: repository, migration, bootstrap.</div>
+    <div class="card"><span class="pill cfg">scaffold</span><h4>tests/scaffold</h4>Kiểm <i>kiến trúc</i>: go.work đủ service, compose chỉ mở đúng cổng, service có healthcheck, Prometheus scrape đủ…</div>
+    <div class="card"><span class="pill ts">smoke</span><h4>Trên hệ thống thật</h4>CI chạy <code>make up</code> rồi curl: Prometheus đủ target, JWKS có 1 khoá RS256, register → 401/404/403/403.</div>
+  </div>
+  <h3>.github/workflows/ci.yml</h3>
+  <table>
+    <tr><th>Job</th><th>Làm gì</th></tr>
+    <tr><td><code>changes</code></td><td>Dùng <code>paths-filter</code> tìm service nào bị đổi (đổi <code>pkg/</code> thì build lại tất cả).</td></tr>
+    <tr><td><code>build</code></td><td>Ma trận: build + test từng service bị đổi.</td></tr>
+    <tr><td><code>shared</code></td><td>Test pkg, contracts, proto/gen, tests, importer.</td></tr>
+    <tr><td><code>proto</code></td><td><code>buf lint</code>, <code>buf breaking</code> so với nhánh gốc của PR, kiểm code sinh ra đã cập nhật.</td></tr>
+    <tr><td><code>integration</code></td><td>Postgres làm service container, chạy test repository/migration.</td></tr>
+    <tr><td><code>smoke</code></td><td>Bật cả hệ thống, kiểm end-to-end như trên.</td></tr>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="bmad">
+  <h2>BMAD trong dự án này</h2>
+  <p><b>BMAD</b> (Breakthrough Method for Agile AI-Driven Development) là một quy trình làm phần mềm cùng AI: thay vì bảo AI “viết app cho tôi”, ta đi qua các giai đoạn như một đội thật — mỗi giai đoạn do một “agent” (vai trò) phụ trách và sinh ra một tài liệu làm đầu vào cho giai đoạn sau.</p>
+
+  <div class="flow">
+    <div class="st"><b>1 · Phân tích</b>Brief<br><small>bmad-product-brief</small></div><span class="ar">→</span>
+    <div class="st"><b>2 · Lập kế hoạch</b>PRD + UX<br><small>bmad-prd · bmad-ux</small></div><span class="ar">→</span>
+    <div class="st"><b>3 · Giải pháp</b>Architecture + Epics<br><small>bmad-architecture · create-epics-and-stories</small></div><span class="ar">→</span>
+    <div class="st"><b>4 · Triển khai</b>Sprint → Story spec → Code → Review<br><small>sprint-planning · bmad-build · code-review</small></div><span class="ar">→</span>
+    <div class="st"><b>5 · Nhìn lại</b>Retrospective<br><small>bmad-retrospective</small></div>
+  </div>
+
+  <h3>Mỗi tài liệu nằm ở đâu</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Giai đoạn</th><th>File</th><th>Chứa gì</th></tr>
+    <tr><td>Brief</td><td><code>_bmad-output/planning-artifacts/briefs/…/brief.md</code></td><td>Ý tưởng, mục tiêu học, phạm vi.</td></tr>
+    <tr><td>PRD</td><td><code>…/prds/…/prd.md</code></td><td>Yêu cầu chức năng <b>FR-1…FR-19</b> và phi chức năng <b>NFR-1…NFR-7</b>.</td></tr>
+    <tr><td>UX</td><td><code>…/ux-designs/…/DESIGN.md</code>, <code>EXPERIENCE.md</code></td><td>Giao diện trông thế nào, hành xử thế nào (UX-DR…).</td></tr>
+    <tr><td>Architecture</td><td><code>…/architecture/…/ARCHITECTURE-SPINE.md</code></td><td>Quyết định kiến trúc <b>AD-1…AD-17</b>: ranh giới service, DB riêng, ma trận giao tiếp, saga, outbox…</td></tr>
+    <tr><td>Epics</td><td><code>_bmad-output/planning-artifacts/epics.md</code></td><td>5 epic, mỗi epic nhiều story có tiêu chí chấp nhận.</td></tr>
+    <tr><td>Sprint</td><td><code>implementation-artifacts/sprint-status.yaml</code></td><td>Trạng thái từng story: backlog → in-progress → review → done.</td></tr>
+    <tr><td>Story spec</td><td><code>implementation-artifacts/spec-1-x-….md</code></td><td>Kế hoạch chi tiết cho 1 story: Intent, Boundaries (Always/Never), bảng I/O &amp; edge case, các task.</td></tr>
+    <tr><td>Bối cảnh epic</td><td><code>implementation-artifacts/epic-1-context.md</code></td><td>Tóm tắt những gì cần biết khi làm các story của Epic 1.</td></tr>
+    <tr><td>Việc hoãn</td><td><code>implementation-artifacts/deferred-work.md</code></td><td>Điều cố ý chưa làm, để không bị quên.</td></tr>
+  </table></div>
+
+  <h3>Truy vết: từ yêu cầu tới dòng code</h3>
+  <p>Điểm đáng học nhất: chú thích trong code ghi mã yêu cầu và quyết định. Ví dụ đi ngược từ code lên tài liệu:</p>
+  <div class="flow">
+    <div class="st"><b>PRD</b>FR-14: đăng ký/đăng nhập · FR-16: phân quyền</div><span class="ar">→</span>
+    <div class="st"><b>Architecture</b>AD-14: identity ký RS256, mọi nơi kiểm qua JWKS</div><span class="ar">→</span>
+    <div class="st"><b>Epics</b>Story 1.4, Story 1.6</div><span class="ar">→</span>
+    <div class="st"><b>Spec</b>spec-1-6-gateway-authentication…md</div><span class="ar">→</span>
+    <div class="st"><b>Code</b>pkg/auth: “(AD-14, FR16)”</div>
+  </div>
+<pre><code>grep -rn "AD-14\|FR16\|FR-16" --include=*.go .     <span class="c"># tìm mọi chỗ code hiện thực quyết định/yêu cầu này</span></code></pre>
+
+  <h3>Các “agent” và skill</h3>
+  <p>Trong <code>.claude/skills/</code> có các skill BMAD mà Claude Code dùng. Bạn gọi bằng <code>/tên-skill</code>:</p>
+  <div class="tablewrap"><table>
+    <tr><th>Vai trò</th><th>Skill</th><th>Khi nào dùng</th></tr>
+    <tr><td>Mary — Analyst</td><td><code>bmad-agent-analyst</code>, <code>bmad-product-brief</code></td><td>Nghiên cứu, viết brief.</td></tr>
+    <tr><td>John — PM</td><td><code>bmad-prd</code></td><td>Viết/kiểm PRD.</td></tr>
+    <tr><td>Sally — UX</td><td><code>bmad-ux</code></td><td>DESIGN.md, EXPERIENCE.md.</td></tr>
+    <tr><td>Winston — Architect</td><td><code>bmad-architecture</code></td><td>Quyết định kiến trúc.</td></tr>
+    <tr><td>—</td><td><code>bmad-create-epics-and-stories</code>, <code>bmad-sprint-planning</code></td><td>Chia epic/story, tạo sprint-status.</td></tr>
+    <tr><td>Amelia — Dev</td><td><code>bmad-build</code></td><td>Làm 1 story: lập spec → code (test trước) → tự review → cập nhật sprint.</td></tr>
+    <tr><td>Reviewer</td><td><code>bmad-code-review</code>, <code>bmad-review</code></td><td>Nhiều góc review song song (edge case, verification gap…).</td></tr>
+    <tr><td>—</td><td><code>bmad-help</code></td><td>Hỏi “giờ nên làm gì tiếp?”.</td></tr>
+  </table></div>
+
+  <h3>Một story spec trông thế nào (spec-1-6)</h3>
+  <ul>
+    <li><b>Intent</b> — Problem + Approach: vấn đề là token chưa được kiểm ở đâu cả; cách làm là thêm <code>pkg/auth</code>, interceptor, route group.</li>
+    <li><b>Boundaries</b> — <i>Always</i>: thiếu token → 401, sai role → 403, fail closed… <i>Never</i>: không viết route nghiệp vụ, không mở cổng service.</li>
+    <li><b>I/O &amp; Edge-Case Matrix</b> — mỗi tình huống, đầu vào, kết quả mong đợi. Các dòng này thành test case.</li>
+    <li>Phần trên được đánh dấu <code>&lt;frozen-after-approval&gt;</code>: AI không được tự sửa ý định đã duyệt.</li>
+  </ul>
+
+  <h3>Trạng thái sprint hiện tại</h3>
+  <div class="flow">
+    <div class="st"><b>review</b>1.1 Scaffold</div><div class="st"><b>review</b>1.2 Observability</div><div class="st"><b>review</b>1.3 Import catalog</div><div class="st"><b>review</b>1.4 Register/Login</div><div class="st"><b>review</b>1.5 Seed demo</div><div class="st"><b>review</b>1.6 Gateway auth</div><div class="st" style="border-color:var(--accent)"><b>in-progress</b>1.7 Web shell</div><div class="st"><b>backlog</b>1.8 Browse products</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="bai-tap">
+  <h2>Bài tập tự làm</h2>
+  <p>Đánh dấu khi xong — tiến độ được nhớ trong trình duyệt này.</p>
+  <div class="progress"><div id="prog"></div></div>
+  <ul class="check" id="tasks">
+    <li><label><input type="checkbox" data-k="t1"><span><b>Bật hệ thống:</b> <code>make up</code>, rồi <code>docker compose -f deployments/docker-compose.yml ps</code> — mọi service “healthy”.</span></label></li>
+    <li><label><input type="checkbox" data-k="t2"><span><b>Readiness:</b> <code>docker compose -f deployments/docker-compose.yml stop postgres</code>, đợi vài giây rồi xem trạng thái identity chuyển unhealthy. Bật lại postgres.</span></label></li>
+    <li><label><input type="checkbox" data-k="t3"><span><b>Trace đầu tiên:</b> <code>curl 127.0.0.1:8080/debug/grpc-health/identity-service</code>, tìm trace trong Jaeger, chỉ ra span cha và span con.</span></label></li>
+    <li><label><input type="checkbox" data-k="t4"><span><b>Đăng ký:</b> <code>curl -X POST 127.0.0.1:8080/api/auth/register -H 'Content-Type: application/json' -d '{"email":"me@example.com","password":"s3cret-pw"}'</code>. Dán access_token vào jwt.io xem <code>sub</code>, <code>role</code>, <code>exp</code>, <code>kid</code>.</span></label></li>
+    <li><label><input type="checkbox" data-k="t5"><span><b>Phân quyền:</b> dùng token đó gọi <code>/api/checkout</code> (404 — qua cổng), <code>/api/seller/orders</code> (403), không token (401). Giải thích vì sao bằng <code>routing.go</code>.</span></label></li>
+    <li><label><input type="checkbox" data-k="t6"><span><b>Prometheus:</b> chạy câu <code>sum by (route, code) (rate(http_requests_total[1m]))</code> và thấy route register/login vừa gọi.</span></label></li>
+    <li><label><input type="checkbox" data-k="t7"><span><b>Grafana:</b> Explore → Prometheus → vẽ <code>rate(grpc_server_handled_total[1m])</code> theo <code>method</code>.</span></label></li>
+    <li><label><input type="checkbox" data-k="t8"><span><b>Log ↔ trace:</b> <code>docker compose -f deployments/docker-compose.yml logs identity-service</code>, tìm dòng có <code>trace_id</code>, tra trong Jaeger.</span></label></li>
+    <li><label><input type="checkbox" data-k="t9"><span><b>Đọc test:</b> mở <code>services/identity-service/internal/service/accounts_test.go</code>, xem store giả thay Postgres thế nào (lợi ích hexagonal).</span></label></li>
+    <li><label><input type="checkbox" data-k="t10"><span><b>Thử thêm RPC:</b> thêm <code>rpc Me(MeRequest) returns (MeResponse)</code> vào identity.proto, <code>make proto-generate</code>, implement đọc <code>auth.FromContext</code>, thêm vào <code>Policy.Roles</code> cho cả 3 role. Bỏ khỏi Policy thì sao? (gợi ý: fail closed)</span></label></li>
+    <li><label><input type="checkbox" data-k="t11"><span><b>BMAD:</b> đọc <code>spec-1-6</code>, chọn 3 dòng trong bảng I/O và tìm test tương ứng trong <code>routing_test.go</code> / <code>pkg/auth/*_test.go</code>.</span></label></li>
+    <li><label><input type="checkbox" data-k="t12"><span><b>Đi trước 1 bước:</b> đọc Story 2.1 trong <code>epics.md</code> và AD-6 — tự phác cách bạn sẽ viết <code>pkg/outbox</code>.</span></label></li>
+  </ul>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  // ---------- theme ----------
+  var root = document.documentElement;
+  function safeGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function safeSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  var saved = safeGet('olg.theme');
+  if (saved) root.setAttribute('data-theme', saved);
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var dark = root.getAttribute('data-theme') === 'dark' ||
+      (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    var next = dark ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    safeSet('olg.theme', next);
+  });
+
+  // ---------- toc: scroll spy + mobile select ----------
+  var links = Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var mnav = document.getElementById('mnav');
+  links.forEach(function (a, i) {
+    var o = document.createElement('option');
+    o.value = a.getAttribute('href');
+    o.textContent = (i + 1) + '. ' + a.textContent;
+    mnav.appendChild(o);
+  });
+  // Scroll in-page instead of changing location.hash, so anchors also work
+  // where the page is shown from a data: URL (previews).
+  function jump(hash) {
+    var el = document.querySelector(hash);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]');
+    if (!a) return;
+    e.preventDefault();
+    jump(a.getAttribute('href'));
+  });
+  mnav.addEventListener('change', function () { jump(mnav.value); });
+  var sections = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var spy = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      var id = '#' + e.target.id;
+      links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === id); });
+      mnav.value = id;
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  sections.forEach(function (s) { if (s) spy.observe(s); });
+
+  // ---------- diagram node info ----------
+  var info = {
+    browser: ['Trình duyệt', 'Người dùng mở web app. Mọi lời gọi đều là REST/JSON tới <code>/api/…</code>; trình duyệt không bao giờ nói chuyện trực tiếp với service bên trong.'],
+    web: ['web/ (React + Vite)', 'Thư mục <code>web/</code>. Khi dev, Vite proxy <code>/api</code> → <code>127.0.0.1:8080</code>. Lưu JWT trong sessionStorage và gắn header <code>Authorization: Bearer</code>. Xem <a href="#web">mục web</a>.'],
+    gateway: ['api-gateway', '<code>services/api-gateway</code>. Nhận REST, kiểm JWT bằng JWKS, chặn sai role (401/403), gọi service qua gRPC và chuyển tiếp JWT. Đổi mã lỗi gRPC → HTTP. Xem <a href="#gateway">mục gateway</a>.'],
+    importer: ['olist-importer', '<code>tools/olist-importer</code>. Chạy theo yêu cầu bằng <code>make import</code>: đọc CSV Kaggle, gọi admin gRPC của catalog và identity. Không ghi thẳng vào DB. Xem <a href="#catalog">mục catalog</a>.'],
+    identity: ['identity-service', '<code>services/identity-service</code>. Đăng ký, đăng nhập (bcrypt), ký JWT RS256, phát JWKS ở <code>:8080/.well-known/jwks.json</code>, seed tài khoản demo. Xem <a href="#identity">mục identity</a>.'],
+    catalog: ['catalog-service', '<code>services/catalog-service</code>. Category, Seller, Product từ dữ liệu Olist. Hiện có RPC import; Story 1.8 sẽ thêm duyệt/lọc sản phẩm.'],
+    order: ['order-service', 'Khung. Sẽ là “nhạc trưởng” của Saga đặt hàng (AD-4), là service duy nhất đổi trạng thái Order (AD-5), dùng outbox để gửi event.'],
+    payment: ['payment-service', 'Khung. Sẽ xử lý thanh toán giả lập, voucher, tỉ lệ thẻ bị từ chối (Epic 2).'],
+    shipping: ['shipping-simulator', 'Khung. Giả lập giao hàng, chỉ nói chuyện qua Kafka — vì vậy gateway không kết nối tới nó (Epic 3).'],
+    analytics: ['analytics-service', 'Khung. Sẽ đọc event Kafka để dựng bảng doanh thu và Ops Dashboard (Epic 5).'],
+    postgres: ['PostgreSQL', '<code>deployments/postgres</code>. Một server, 6 database, mỗi DB một user riêng không vào được DB khác (AD-2). Migration tự chạy lúc service khởi động.'],
+    kafka: ['Kafka', 'Hàng đợi sự kiện (KRaft, 1 node). Hiện chỉ là readiness check cho order/payment/shipping/analytics. Từ Epic 2: outbox → topic → inbox.'],
+    jaeger: ['Jaeger', 'Lưu và hiển thị <b>trace</b>. Service gửi span qua OTLP/HTTP tới <code>jaeger:4318</code>. Mở <code>localhost:16686</code>. Xem <a href="#jaeger">giải thích chi tiết</a>.'],
+    prometheus: ['Prometheus', 'Cứ 5 giây kéo <code>/metrics</code> ở cổng 8090 của từng service, lưu thành chuỗi thời gian, truy vấn bằng PromQL. Mở <code>localhost:9090</code>. Xem <a href="#prometheus">giải thích chi tiết</a>.'],
+    grafana: ['Grafana', 'Vẽ biểu đồ từ Prometheus và Jaeger (datasource tự cấu hình). Không tự lưu dữ liệu. Mở <code>localhost:3000</code>. Xem <a href="#grafana">giải thích chi tiết</a>.'],
+    kafkaui: ['kafka-ui', 'Giao diện xem topic và message trong Kafka. Mở <code>localhost:8081</code>.']
+  };
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('#arch .node'));
+  var infoBox = document.getElementById('nodeinfo');
+  nodes.forEach(function (g) {
+    g.setAttribute('tabindex', '0');
+    function show() {
+      var d = info[g.getAttribute('data-n')];
+      nodes.forEach(function (n) { n.classList.remove('sel'); });
+      g.classList.add('sel');
+      infoBox.innerHTML = '<b>' + d[0] + '</b><br>' + d[1];
+    }
+    g.addEventListener('click', show);
+    g.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); show(); } });
+  });
+
+  // ---------- login stepper ----------
+  var steps = [
+    { t: 'Người dùng bấm “Login”', n: ['browser', 'web'], e: ['browser-web'],
+      b: '<code>web/src/pages/Login.tsx</code> dùng <code>AuthForm</code>. Khi submit, nó gọi <code>apiFetch(\'/api/auth/login\', {method:\'POST\', body:{email,password}})</code> trong <code>src/lib/api.ts</code>.' },
+    { t: 'Vite proxy chuyển tới gateway', n: ['web', 'gateway'], e: ['web-gw'],
+      b: '<code>vite.config.ts</code>: <code>proxy: {\'/api\': \'http://127.0.0.1:8080\'}</code>. Cổng 8080 là cổng duy nhất của app được mở ra máy bạn.' },
+    { t: 'Gateway nhận request — trace bắt đầu', n: ['gateway'], e: [],
+      b: '<code>pkg/app</code> đã bọc handler bằng <code>otelhttp.NewHandler</code> (tạo span gốc, sinh <code>trace_id</code>) và <code>ops.HTTPMetrics</code> (đếm request). <code>ServeMux</code> khớp pattern <code>POST /api/auth/login</code> → handler trong <code>internal/handler/auth.go</code>. <code>readCredentials</code> đọc JSON tối đa 4 KB.' },
+    { t: 'Gateway gọi identity qua gRPC', n: ['gateway', 'identity'], e: ['gw-bus', 'bus', 'bus-identity'],
+      b: '<code>identity.Login(ctx, &amp;LoginRequest{...})</code> — client sinh từ proto. Connection tạo bởi <code>grpcx.Dial</code>: <code>otelgrpc</code> gắn <code>traceparent</code> vào metadata; <code>auth.ForwardToken</code> không gắn gì vì chưa có token. Timeout 5s.' },
+    { t: 'identity: interceptor chạy trước handler', n: ['identity'], e: [],
+      b: 'Server từ <code>grpcx.NewServer</code>: <code>otelgrpc</code> tạo span con (cùng trace_id), interceptor metrics bấm giờ. Rồi <code>Policy.UnaryInterceptor</code>: <code>/identity.v1.IdentityService/Login</code> nằm trong <code>Public</code> → cho qua không cần token.' },
+    { t: 'transport → service → repository', n: ['identity', 'postgres'], e: ['db'],
+      b: '<code>transport.identity.Login</code> gọi <code>service.Accounts.Login</code>: chuẩn hoá email → <code>repository.AccountByEmail</code> chạy <code>SELECT … FROM account WHERE email=$1</code> trong DB <code>identity</code> → <code>bcrypt.Compare</code>. Sai → <code>ErrBadCredentials</code> → <code>codes.Unauthenticated</code>.' },
+    { t: 'Ký JWT', n: ['identity'], e: [],
+      b: '<code>token.Issuer.Issue(account.ID, role)</code> tạo claims <code>{sub, role, iat, exp=+1h}</code>, header <code>kid</code>, ký RS256 bằng private key lấy từ bảng <code>signing_key</code> lúc khởi động.' },
+    { t: 'Trả token về trình duyệt', n: ['identity', 'gateway', 'web', 'browser'], e: ['bus-identity', 'bus', 'gw-bus', 'web-gw', 'browser-web'],
+      b: 'gRPC trả <code>LoginResponse{Token}</code>. Gateway <code>writeToken</code> → <code>200 {"access_token":"eyJ…","token_type":"Bearer","expires_in":3600}</code>. Nếu lỗi: <code>WriteGRPCError</code> đổi Unauthenticated → 401 với body <code>{"error":{…}}</code>.' },
+    { t: 'Web lưu phiên và chuyển trang', n: ['web'], e: [],
+      b: '<code>SessionContext.logIn</code> → <code>saveSession</code> (sessionStorage) → <code>decodeClaims</code> đọc role → điều hướng tới <code>safeReturn(next, role)</code> hoặc <code>homeFor(role)</code>. Đặt hẹn giờ tự đăng xuất khi tới <code>exp</code>.' },
+    { t: 'Request sau: gọi route cần quyền', n: ['browser', 'web', 'gateway', 'identity'], e: ['browser-web', 'web-gw', 'jwks'],
+      b: 'VD <code>GET /api/orders</code> với <code>Authorization: Bearer …</code>. <code>routing.RequireRole</code> → <code>Verifier.Verify</code> → <code>KeySet.Key(kid)</code>: lần đầu tải JWKS từ identity (HTTP :8080), các lần sau dùng cache. Không token → 401, sai role → 403, đúng → handler (hiện là 404 vì chưa có nghiệp vụ). Service nhận lời gọi sẽ <b>kiểm lại</b> token chuyển tiếp.' },
+    { t: 'Trong lúc đó: quan sát', n: ['jaeger', 'prometheus', 'grafana'], e: ['traces', 'scrape', 'graf'],
+      b: 'Span của gateway và identity được gửi lô tới Jaeger → xem trace 2 tầng. Bộ đếm <code>http_requests_total{route="POST /api/auth/login",code="200"}</code> và <code>grpc_server_handled_total{method="/identity.v1.IdentityService/Login",code="OK"}</code> tăng; Prometheus kéo về sau ≤5s; Grafana vẽ.' }
+  ];
+  var cur = 0;
+  var text = document.getElementById('stepText');
+  var num = document.getElementById('stepNum');
+  var dots = document.getElementById('stepDots');
+  var prev = document.getElementById('prevStep');
+  var next = document.getElementById('nextStep');
+  steps.forEach(function (_, i) {
+    var d = document.createElement('span');
+    d.title = 'Bước ' + (i + 1);
+    d.addEventListener('click', function () { cur = i; render(); });
+    dots.appendChild(d);
+  });
+  function render() {
+    var s = steps[cur];
+    text.innerHTML = '<h4>' + (cur + 1) + '. ' + s.t + '</h4>' + s.b;
+    num.textContent = 'Bước ' + (cur + 1) + ' / ' + steps.length;
+    prev.disabled = cur === 0;
+    next.disabled = cur === steps.length - 1;
+    Array.prototype.forEach.call(dots.children, function (d, i) { d.classList.toggle('on', i <= cur); });
+    nodes.forEach(function (g) { g.classList.toggle('lit', s.n.indexOf(g.getAttribute('data-n')) >= 0); });
+    document.querySelectorAll('#arch .edge').forEach(function (p) {
+      p.classList.toggle('lit', s.e.indexOf(p.getAttribute('data-e')) >= 0);
+    });
+  }
+  prev.addEventListener('click', function () { if (cur > 0) { cur--; render(); } });
+  next.addEventListener('click', function () { if (cur < steps.length - 1) { cur++; render(); } });
+  render();
+
+  // ---------- pkg filter ----------
+  var filter = document.getElementById('pkgFilter');
+  var files = Array.prototype.slice.call(document.querySelectorAll('#pkgFiles details'));
+  filter.addEventListener('input', function () {
+    var q = filter.value.trim().toLowerCase();
+    files.forEach(function (d) {
+      var hit = !q || d.textContent.toLowerCase().indexOf(q) >= 0;
+      d.style.display = hit ? '' : 'none';
+      if (q && hit) d.open = true;
+    });
+  });
+
+  // ---------- exercises ----------
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('#tasks input'));
+  var prog = document.getElementById('prog');
+  var done = {};
+  try { done = JSON.parse(safeGet('olg.tasks') || '{}') || {}; } catch (e) { done = {}; }
+  function update() {
+    var n = boxes.filter(function (b) { return b.checked; }).length;
+    prog.style.width = (100 * n / boxes.length) + '%';
+  }
+  boxes.forEach(function (b) {
+    b.checked = !!done[b.getAttribute('data-k')];
+    b.addEventListener('change', function () {
+      done[b.getAttribute('data-k')] = b.checked;
+      safeSet('olg.tasks', JSON.stringify(done));
+      update();
+    });
+  });
+  update();
+})();
+</script>
+</body>
+</html>
